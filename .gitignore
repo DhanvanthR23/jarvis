@@ -1,0 +1,25 @@
+# Personal notes — not tracked
+plan.md
+prompt.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Runtime artifacts (generated, not tracked)
+*.db
+anchor.log
+/run/
+
+# IDE
+.vscode/
+.idea/
+
+# Virtual environments
+venv/
+.venv/
