@@ -1,0 +1,20 @@
+[meta]
+version = "0.1.0"
+
+[capabilities]
+system_info = "safe"
+system_temperature = "safe"
+network_interfaces = "safe"
+network_status = "safe"
+processes_list = "safe"
+logs_search = "safe"
+files_read = "safe"
+files_search = "safe"
+
+files_write = "approval"
+service_restart = "approval"
+package_install = "approval"
+memory_write = "approval"
+
+arbitrary_shell = "disabled"
+sudo = "disabled"

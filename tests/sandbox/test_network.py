@@ -1,0 +1,33 @@
+"""Sandbox network isolation tests (G3).
+
+Verifies that the sandbox has no IP networking and that the MCP socket is accessible.
+"""
+
+import unittest
+
+from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
+
+
+@REQUIRE_BWRAP
+class TestNetworkIsolation(unittest.TestCase):
+
+    def test_no_ip_networking(self):
+        """Sandbox must not have IP networking."""
+        # Try to create a TCP socket — should fail in network namespace
+        result = run_in_sandbox([
+            '/usr/bin/python3', '-c',
+            'import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); '
+            's.settimeout(1); s.connect(("8.8.8.8", 53))',
+        ])
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_mcp_socket_path_exists(self):
+        """The MCP socket path should exist inside the sandbox."""
+        result = run_in_sandbox([
+            '/usr/bin/test', '-e', '/run/jarvis/mcp.sock',
+        ])
+        self.assertEqual(result.returncode, 0)
+
+
+if __name__ == '__main__':
+    unittest.main()
