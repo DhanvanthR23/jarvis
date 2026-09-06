@@ -18,3 +18,4 @@ memory_write = "approval"
 
 arbitrary_shell = "disabled"
 sudo = "disabled"
+command_execute = "safe"

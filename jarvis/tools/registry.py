@@ -18,6 +18,10 @@ def register_readonly_tools(controller: JarvisController):
     controller.register_tool('files.read', files.files_read, 'Read contents of a file')
     controller.register_tool('files.search', files.files_search, 'Search for files in a directory matching a pattern')
     
+    # G19 Command Tools
+    from jarvis.tools import commands
+    controller.register_tool('command.execute', commands.command_execute, 'Execute an allowlisted command with structured arguments')
+    
     # G18 Mutation Tools
     from jarvis.tools import mutations
     controller.register_tool('files.write', mutations.files_write, 'Write content to a file')
