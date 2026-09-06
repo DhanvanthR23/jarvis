@@ -33,6 +33,9 @@ class JarvisController:
         self.memory_store = memory_store
         self.tool_registry = tool_registry or {}
         self._session = Session()
+        
+        from jarvis.policy.approval import SessionApprovalCache
+        self.approval_cache = SessionApprovalCache()
 
     @property
     def session(self) -> Session:
@@ -128,35 +131,41 @@ class JarvisController:
                     approval_req = ApprovalRequest(
                         actor='agent',
                         capability=tool_name,
-                        target=str(args),
                         arguments=args,
                         reason='Agent requested tool execution',
                         risk=result.reason,
                         timestamp=time.time(),
                     )
-                    approval_resp = self.approval_handler.request_approval(
-                        approval_req,
-                    )
-                    approval_decision = approval_resp.decision.value
-
-                    self.session.add_event(Event(
-                        type=EventType.APPROVAL_RESPONSE,
-                        session_id=self.session.session_id,
-                        data={
-                            'tool_name': tool_name,
-                            'decision': approval_decision,
-                        },
-                    ))
-
-                    if approval_resp.decision.value == 'deny':
-                        self._audit_event(
-                            tool_name, args, policy_decision,
-                            approval_decision, 'denied by user',
+                    
+                    if self.approval_cache.is_approved(approval_req):
+                        approval_decision = 'allow_session_cached'
+                    else:
+                        approval_resp = self.approval_handler.request_approval(
+                            approval_req,
                         )
-                        return {
-                            'status': 'denied',
-                            'message': 'User denied the request',
-                        }
+                        approval_decision = approval_resp.decision.value
+                        
+                        if approval_resp.decision.value == 'allow_session':
+                            self.approval_cache.add_approval(approval_req, approval_resp)
+
+                        self.session.add_event(Event(
+                            type=EventType.APPROVAL_RESPONSE,
+                            session_id=self.session.session_id,
+                            data={
+                                'tool_name': tool_name,
+                                'decision': approval_decision,
+                            },
+                        ))
+
+                        if approval_resp.decision.value == 'deny':
+                            self._audit_event(
+                                tool_name, args, policy_decision,
+                                approval_decision, 'denied by user',
+                            )
+                            return {
+                                'status': 'denied',
+                                'message': 'User denied the request',
+                            }
                 else:
                     # No approval handler — deny by default (safe)
                     self._audit_event(
@@ -203,7 +212,7 @@ class JarvisController:
         self, tool_name, args, policy_decision, approval_decision,
         result_summary,
     ):
-        """Log to audit system if available."""
+        """Log to audit system if available. Fail-closed on audit failure."""
         if self.audit_logger:
             try:
                 self.audit_logger.log_event(
@@ -215,5 +224,6 @@ class JarvisController:
                     approval_decision=approval_decision,
                     result_summary=result_summary,
                 )
-            except Exception:
-                pass  # Audit failure shouldn't crash the pipeline
+            except Exception as e:
+                # Security invariant: if audit fails, halt execution!
+                raise RuntimeError(f"Audit failure: {e}")

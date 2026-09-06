@@ -38,3 +38,12 @@ class TestManifest(unittest.TestCase):
     def test_manifest_integrity_error(self):
         with self.assertRaises(ManifestIntegrityError):
             load_manifest(self.path, "wrong_hash")
+
+    def test_manifest_corrupted_file(self):
+        # Corrupt the file by one byte
+        with open(self.path, 'a') as f:
+            f.write("x")
+        
+        # Must refuse to start (raise ManifestIntegrityError) and not continue
+        with self.assertRaises(ManifestIntegrityError):
+            load_manifest(self.path, self.trusted_hash)

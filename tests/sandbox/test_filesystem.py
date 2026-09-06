@@ -75,6 +75,11 @@ class TestFilesystemIsolation(unittest.TestCase):
             if os.path.exists(marker):
                 os.unlink(marker)
 
+    def test_cannot_read_audit_anchor(self):
+        """Sandbox must not be able to read /var/log/jarvis where the anchor lives."""
+        result = run_in_sandbox(['/usr/bin/ls', '/var/log/jarvis'])
+        self.assertNotEqual(result.returncode, 0)
+
 
 if __name__ == '__main__':
     unittest.main()
