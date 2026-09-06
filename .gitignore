@@ -1,6 +1,9 @@
-# Personal notes — not tracked
-plan.md
-prompt.md
+# Markdown — personal/local only, keep repo-standard ones
+*.md
+!README.md
+!CONTRIBUTING.md
+!CHANGELOG.md
+!LICENSE.md
 
 # Python
 __pycache__/
