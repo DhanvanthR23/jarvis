@@ -29,7 +29,8 @@ class SandboxConfig:
     """Configuration for a sandbox instance."""
     workspace_dir: str
     socket_path: str
-    read_only_paths: list[str] = dataclasses.field(default_factory=list)
+    read_only_paths: list[str | tuple[str, str]] = dataclasses.field(default_factory=list)
+    writable_paths: list[str | tuple[str, str]] = dataclasses.field(default_factory=list)
     env: dict[str, str] = dataclasses.field(default_factory=dict)
 
 
@@ -117,9 +118,24 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     bwrap_cmd += ['--ro-bind', config.socket_path, '/run/jarvis/mcp.sock']
 
     # Additional read-only paths
-    for ro_path in config.read_only_paths:
-        if os.path.exists(ro_path):
-            bwrap_cmd += ['--ro-bind', ro_path, ro_path]
+    for item in config.read_only_paths:
+        if isinstance(item, tuple) and len(item) == 2:
+            src, dst = item
+            if os.path.exists(src):
+                bwrap_cmd += ['--ro-bind', src, dst]
+        elif isinstance(item, str):
+            if os.path.exists(item):
+                bwrap_cmd += ['--ro-bind', item, item]
+
+    # Additional writable paths
+    for item in config.writable_paths:
+        if isinstance(item, tuple) and len(item) == 2:
+            src, dst = item
+            if os.path.exists(src):
+                bwrap_cmd += ['--bind', src, dst]
+        elif isinstance(item, str):
+            if os.path.exists(item):
+                bwrap_cmd += ['--bind', item, item]
 
     # Clear all environment variables and set only controlled ones
     bwrap_cmd += ['--clearenv']
