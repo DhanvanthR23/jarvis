@@ -26,11 +26,9 @@ class MemoryPolicyEngine:
                 approval_req = ApprovalRequest(
                     actor='agent',
                     capability='memory_write',
-                    target=request.entry.key,
-                    arguments={'value': request.entry.value},
+                    arguments={'key': request.entry.key, 'value': request.entry.value},
                     reason='High impact memory write',
                     risk='approval',
-                    timestamp=time.time(),
                 )
                 decision = self.approval_handler.request_approval(approval_req)
                 if decision and decision.decision.name.startswith("ALLOW"):

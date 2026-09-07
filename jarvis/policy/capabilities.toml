@@ -19,3 +19,26 @@ memory_write = "approval"
 arbitrary_shell = "disabled"
 sudo = "disabled"
 command_execute = "safe"
+
+# G21 Isolated GUI Tools
+desktop_screenshot = "safe"
+desktop_windows = "safe"
+desktop_focus = "approval"
+desktop_click = "approval"
+desktop_type = "approval"
+desktop_keypress = "approval"
+
+# G22 Real Desktop Tools
+desktop_observe = "safe"
+real_desktop_focus = "approval"
+real_desktop_click = "approval"
+real_desktop_type = "approval"
+real_desktop_keypress = "approval"
+
+# G23 Browser Tools
+browser_navigate = "safe"
+browser_read = "safe"
+browser_type = "safe"
+browser_click = "approval"
+browser_download = "approval"
+browser_upload = "approval"
