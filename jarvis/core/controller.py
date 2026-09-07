@@ -25,13 +25,19 @@ class JarvisController:
         audit_logger=None,
         memory_store=None,
         tool_registry: dict = None,
+        voice_session=None,
+        output_filter=None,
     ):
+        from jarvis.output.filter import OutputSecurityFilter
+        
         self.agent_backend = agent_backend
         self.policy_engine = policy_engine
         self.approval_handler = approval_handler
         self.audit_logger = audit_logger
         self.memory_store = memory_store
         self.tool_registry = tool_registry or {}
+        self.voice_session = voice_session
+        self.output_filter = output_filter or OutputSecurityFilter()
         self._session = Session()
         
         from jarvis.policy.approval import SessionApprovalCache
@@ -79,7 +85,33 @@ class JarvisController:
         )
         self.session.add_event(resp_event)
 
-        return response
+        return self.output_filter.filter(response)
+
+    def process_voice_request(self, transcript) -> str:
+        """Process a user voice request.
+        
+        Identical to process_request but takes a Transcript, logs voice-specific event,
+        and applies identical authorization pipeline.
+        """
+        # Record voice event
+        self.session.add_event(Event(
+            type='VOICE_UTTERANCE',
+            session_id=self.session.session_id,
+            data={'text': transcript.text, 'confidence': transcript.confidence},
+        ))
+
+        def tool_callback(tool_name: str, args: dict) -> dict:
+            return self._execute_tool(tool_name, args)
+
+        response = self.agent_backend.process(transcript.text, tool_callback)
+
+        self.session.add_event(Event(
+            type=EventType.AGENT_RESPONSE,
+            session_id=self.session.session_id,
+            data={'response': response},
+        ))
+
+        return self.output_filter.filter(response)
 
     def _execute_tool(self, tool_name: str, args: dict) -> dict:
         """Execute a tool through the policy pipeline.
