@@ -14,6 +14,7 @@ class ApprovalDecision(Enum):
     ALLOW_ONCE = "allow_once"
     ALLOW_SESSION = "allow_session"
     DENY = "deny"
+    PENDING = "pending"
 
 @dataclass
 class ApprovalRequest:
