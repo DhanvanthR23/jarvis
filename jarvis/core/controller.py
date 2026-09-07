@@ -100,6 +100,45 @@ class JarvisController:
             data={'text': transcript.text, 'confidence': transcript.confidence},
         ))
 
+        # Check for confirmation
+        from jarvis.voice.confirmation import is_confirmation, process_confirmation
+        from jarvis.policy.approval import ApprovalRequest, ApprovalResponse, ApprovalDecision
+        import time
+        if self.voice_session:
+            self.voice_session.cleanup_expired()
+            if is_confirmation(transcript):
+                result = process_confirmation(transcript, self.voice_session)
+                if result['status'] == 'rejected':
+                    if result['reason'] == 'insufficient_confidence':
+                        return self.output_filter.filter("I couldn't hear that clearly enough to confirm. Please repeat.")
+                    return self.output_filter.filter("Confirmation rejected.")
+                elif result['status'] == 'ambiguous':
+                    return self.output_filter.filter("Multiple approvals pending. Please specify which one to confirm.")
+                elif result['status'] == 'confirmed':
+                    approval = result['approval']
+                    # Create the synthetic ApprovalRequest & Response to inject into the cache
+                    req = ApprovalRequest(
+                        actor='agent',
+                        capability=approval.capability,
+                        arguments=approval.arguments,
+                        reason='Voice confirmed',
+                        risk='approval'
+                    )
+                    resp = ApprovalResponse(
+                        request_id=req.request_id,
+                        decision=ApprovalDecision.ALLOW_SESSION,
+                        responded_at=time.time(),
+                        responded_by="voice_system",
+                        expires_at=approval.expires_at
+                    )
+                    self.approval_cache.add_approval(req, resp)
+                    
+                    # Now re-invoke the tool that was pending! 
+                    # Wait, the agent is waiting for the result. Actually, the agent was told "Requires voice confirmation".
+                    # If we just add it to the cache, we can tell the agent "Approval confirmed. Proceed."
+                    response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a))
+                    return self.output_filter.filter(response)
+
         def tool_callback(tool_name: str, args: dict) -> dict:
             return self._execute_tool(tool_name, args)
 
@@ -197,6 +236,16 @@ class JarvisController:
                             return {
                                 'status': 'denied',
                                 'message': 'User denied the request',
+                            }
+                            
+                        if approval_resp.decision.value == 'pending':
+                            self._audit_event(
+                                tool_name, args, policy_decision,
+                                approval_decision, 'pending voice confirmation',
+                            )
+                            return {
+                                'status': 'pending_approval',
+                                'message': 'Requires voice confirmation. Say: "Yes Jarvis, confirm".'
                             }
                 else:
                     # No approval handler — deny by default (safe)
