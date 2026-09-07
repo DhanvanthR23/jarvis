@@ -17,11 +17,10 @@ Note: This 0.8 threshold is *only* applied during the explicit approval confirma
 The secondary (pattern-detection) layer of the `OutputSecurityFilter` exists to catch cases where AGY transcribes secrets into freeform prose after original metadata/provenance tags are lost. 
 
 **Tested Coverage:**
-- The pattern layer is confirmed to catch secrets reproduced in recognizable literal format (e.g. `AKIA1234567890123456`), even when embedded directly in unrelated, paraphrased carrier prose.
-- It also correctly detects literal secrets even when slightly reformatted or split across spacing (e.g. `A K I A 1 2 3...`).
+- The pattern layer is confirmed to catch secrets reproduced in their recognizable literal, contiguous format (e.g. `AKIA1234567890123456`), even when embedded directly in unrelated carrier sentences.
 
-**Explicit Limitations (Semantic-Description Gap):**
-- The regex layer is **not** confirmed to catch purely semantic or descriptive leakage.
-- Cases where AGY conveys the existence, type, or partial substance of a secret without outputting any literal, regex-matchable substring (e.g. "The key I found starts with A-K-I-A followed by a string of numbers") will slip past the filter.
-- This semantic-description gap is an explicit, documented limitation of the current implementation, not a solved problem.
-- **Suggested Direction:** Closing this gap robustly likely requires constraining what AGY is permitted to "see" of `SECRET`-tagged tool results upstream (e.g., redacting them from the agent's context window entirely before it generates prose), rather than exclusively relying on downstream output filtering after the fact.
+**Explicit Limitations (Open Gaps):**
+- The regex layer is **not** confirmed to reliably catch literal secrets that have been slightly reformatted, split across spacing, or hyphenated (e.g., `A K I A 1 2 3...`).
+- The regex layer is **not** confirmed to catch purely semantic or descriptive leakage—cases where AGY conveys the existence, type, or partial substance of a secret without outputting any literal, regex-matchable substring (e.g., "The key I found starts with A-K-I-A followed by a string of numbers").
+- Both the semantic-description gap and the reformatting gap are explicit, documented limitations of the current implementation, not solved problems. 
+- **Suggested Direction:** If a future fix is wanted for the spacing-tolerance case specifically, it needs a bounded design (e.g., a normalization step that strips whitespace/hyphens from a fixed-size sliding window before matching) rather than making the regex itself infinitely permissive (which causes catastrophic false positives). For the semantic gap, closing it robustly likely requires upstream constraints on what AGY is permitted to "see" of `SECRET`-tagged tool results.

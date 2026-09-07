@@ -29,9 +29,9 @@ _SECRET_PATTERNS = [
     re.compile(r'(?i)database[_\s]?url\s*[:=]\s*\S+'),
     re.compile(r'(?i)connection[_\s]?string\s*[:=]\s*\S+'),
     re.compile(r'ssh-rsa\s+[A-Za-z0-9+/=]{20,}'),
-    re.compile(r'g[\s\-]*h[\s\-]*p[\s\-]*_(?:[\s\-]*[A-Za-z0-9]){36}'),  # GitHub PAT
-    re.compile(r's[\s\-]*k[\s\-]*-(?:[\s\-]*[A-Za-z0-9]){20,}'),      # OpenAI key
-    re.compile(r'A[\s\-]*K[\s\-]*I[\s\-]*A(?:[\s\-]*[A-Z0-9]){16}'),  # AWS access key
+    re.compile(r'ghp_[A-Za-z0-9]{36}'),                # GitHub PAT
+    re.compile(r'sk-[A-Za-z0-9]{20,}'),                 # OpenAI key
+    re.compile(r'AKIA[A-Z0-9]{16}'),                     # AWS access key
 ]
 
 
