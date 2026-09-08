@@ -10,23 +10,22 @@ from jarvis.audit.logger import AuditLogger
 from jarvis.audit.database import AuditDatabase
 
 
-def get_controller() -> JarvisController:
-    # Try to initialize a reasonable default controller for the CLI
+def get_controller(backend_name: str = "mock") -> JarvisController:
     import os
-    
-    # We should use the real AgyAgent if possible, but the prompt says 
-    # "Must import and initialize JarvisController". Let's setup the dependencies.
-    # To avoid breaking the existing sandbox constraints or tests, we'll try to 
-    # initialize with safe defaults or standard implementations.
     from jarvis.agent.agy import AGYBackend
+    from jarvis.agent.mock import MockAgent, DEFAULT_SCENARIOS
     
     # Setup agent
-    try:
-        agent = AGYBackend(sandbox_workspace="/tmp/jarvis_workspace")
-    except Exception:
-        # Fallback to mock if AGYBackend fails to initialize (e.g. missing bwrap)
-        from jarvis.agent.mock import MockAgent
-        agent = MockAgent([])
+    agent = None
+    if backend_name == "agy":
+        try:
+            agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace")
+        except Exception as e:
+            print(f"Warning: AGYBackend failed to initialize: {e}. Falling back to MockAgent.", file=sys.stderr)
+            backend_name = "mock"
+            
+    if backend_name == "mock" or agent is None:
+        agent = MockAgent(DEFAULT_SCENARIOS)
 
     # Setup Policy
     policy_engine = None
@@ -49,10 +48,20 @@ def main():
     parser = argparse.ArgumentParser(description="Jarvis CLI Entrypoint")
     parser.add_argument("query", nargs="*", help="Non-interactive query string")
     parser.add_argument("--voice", action="store_true", help="Launch Voice Runtime")
+    parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
     args = parser.parse_args()
 
+    # Determine backend
+    backend = args.backend
+    if not backend:
+        # Defaulting safely, but supporting live sandboxed AGY when running interactively
+        if args.query or args.voice:
+            backend = "mock"
+        else:
+            backend = "agy"
+
     try:
-        controller = get_controller()
+        controller = get_controller(backend_name=backend)
     except Exception as e:
         print(f"Failed to initialize controller: {e}", file=sys.stderr)
         sys.exit(1)

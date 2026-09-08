@@ -54,22 +54,22 @@ DEFAULT_SCENARIOS = [
     ScriptedScenario(
         trigger="wifi",
         steps=[
-            ScriptedStep("network.interfaces", {}),
-            ScriptedStep("network.status", {"interface": "wlan0"})
+            ScriptedStep("network_interfaces", {}),
+            ScriptedStep("network_status", {"interface": "wlan0"})
         ],
         response="Wifi diagnosis: Interfaces {}, Status {}"
     ),
     ScriptedScenario(
         trigger="disk",
         steps=[
-            ScriptedStep("system.disk_usage", {"path": "/"})
+            ScriptedStep("system_info", {})  # Changed from system.disk_usage
         ],
         response="Disk usage information: {}"
     ),
     ScriptedScenario(
         trigger="process",
         steps=[
-            ScriptedStep("processes.list", {"limit": 10})
+            ScriptedStep("processes_list", {"limit": 10})
         ],
         response="Running processes: {}"
     )

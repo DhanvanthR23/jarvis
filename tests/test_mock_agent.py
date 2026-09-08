@@ -17,7 +17,7 @@ class TestMockAgent(unittest.TestCase):
             return f"result_for_{tool}"
             
         self.agent.process("wifi is broken", track_cb)
-        self.assertEqual(calls, ["network.interfaces", "network.status"])
+        self.assertEqual(calls, ["network_interfaces", "network_status"])
         
     def test_returns_scenario_response(self):
         def dummy_cb(tool, args): return "OK"
