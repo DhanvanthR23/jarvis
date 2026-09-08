@@ -12,6 +12,9 @@ def is_confirmation(transcript: Transcript) -> bool:
 def process_confirmation(transcript: Transcript, session: VoiceSession, min_confidence: float = 0.8) -> dict:
     """Process a voice confirmation attempt."""
     # 1. Confidence check (Invariant O)
+    # NOTE: The 0.8 min_confidence threshold is an empirical/operational tuning value 
+    # chosen from testing, not a security guarantee. It does NOT authenticate the speaker 
+    # (per Invariant M) and must never be described or relied upon as proof of speaker identity.
     if transcript.confidence < min_confidence:
         # Invariant O: fails closed, does not consume, does not extend, records failure
         # But which approval? We don't know if ambiguous. We apply failure to ALL pending?

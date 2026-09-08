@@ -9,7 +9,7 @@ from jarvis.security.invariants import (
 class TestInvariants(unittest.TestCase):
     def test_expected_invariant_ids(self):
         self.assertEqual(set(INVARIANTS.keys()), set(EXPECTED_INVARIANT_IDS))
-        self.assertEqual(len(EXPECTED_INVARIANT_IDS), 11)
+        self.assertEqual(len(EXPECTED_INVARIANT_IDS), 17)
         for expected_id in ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"]:
             self.assertIn(expected_id, EXPECTED_INVARIANT_IDS)
 
