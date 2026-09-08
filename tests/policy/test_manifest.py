@@ -27,6 +27,32 @@ class TestManifest(unittest.TestCase):
         man = CapabilityManifest(self.path)
         self.assertTrue(man.verify_integrity(self.trusted_hash))
         
+    def test_roles_parsing(self):
+        content = """
+        [meta]
+        version = "1.0"
+        [roles.tester]
+        description = "Test role"
+        allowed_capabilities = ["test_tool"]
+        max_execution_time = 30
+        can_mutate = true
+        """
+        with open(self.path, 'w') as f:
+            f.write(content)
+
+        manifest = CapabilityManifest(self.path)
+        manifest.load()
+
+        roles = manifest.roles
+        self.assertIn('tester', roles)
+        role = roles['tester']
+        self.assertEqual(role.name, 'tester')
+        self.assertEqual(role.description, 'Test role')
+        self.assertEqual(role.allowed_capabilities, ['test_tool'])
+        self.assertEqual(role.max_execution_time, 30)
+        self.assertTrue(role.can_mutate)
+        self.assertFalse(role.approval_required)
+        
     def test_verify_integrity_fails(self):
         man = CapabilityManifest(self.path)
         self.assertFalse(man.verify_integrity("wrong_hash"))

@@ -140,7 +140,7 @@ INV_K = _register(SecurityInvariant(
 ))
 
 # Expected invariant IDs — used by tests to detect accidental removal
-EXPECTED_INVARIANT_IDS = frozenset("ABCDEFGHIJK")
+EXPECTED_INVARIANT_IDS = frozenset(["A","B","C","D","E","F","G","H","I","J","K","AA","AB","AC","AD","AE","AF"])
 
 # Threats that must each have a concrete control
 EXPECTED_THREATS = frozenset({
@@ -154,3 +154,45 @@ EXPECTED_THREATS = frozenset({
     "audit_tampering",
     "sandbox_regression",
 })
+
+INV_AA = _register(SecurityInvariant(
+    id="AA",
+    name="untrusted_agents",
+    description="All agents are untrusted. No model tier or role carries intrinsic trust. Every agent runs in an isolated container.",
+    violation_response=ViolationResponse.ARCHITECTURAL,
+))
+
+INV_AB = _register(SecurityInvariant(
+    id="AB",
+    name="zero_direct_ipc",
+    description="Zero direct agent-to-agent IPC. All data passing is mediated by the trusted Jarvis Controller.",
+    violation_response=ViolationResponse.ARCHITECTURAL,
+))
+
+INV_AC = _register(SecurityInvariant(
+    id="AC",
+    name="capability_compartmentalization",
+    description="An agent cannot call or discover tools outside its explicitly assigned role in capabilities.toml.",
+    violation_response=ViolationResponse.DEFAULT_DENY,
+))
+
+INV_AD = _register(SecurityInvariant(
+    id="AD",
+    name="no_transitive_authority",
+    description="An agent cannot proxy its capabilities. Delegation inherits strict intersection of allowed capabilities.",
+    violation_response=ViolationResponse.ARCHITECTURAL,
+))
+
+INV_AE = _register(SecurityInvariant(
+    id="AE",
+    name="inter_agent_filtering",
+    description="All text passed between agents must pass through the OutputSecurityFilter.",
+    violation_response=ViolationResponse.ARCHITECTURAL,
+))
+
+INV_AF = _register(SecurityInvariant(
+    id="AF",
+    name="serialized_execution",
+    description="Serialized execution & bounded concurrency. Cooperative turn-taking is enforced to prevent resource exhaustion.",
+    violation_response=ViolationResponse.FAIL_CLOSED,
+))

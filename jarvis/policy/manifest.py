@@ -32,6 +32,17 @@ class Capability:
     description: str = ''
 
 
+@dataclass
+class Role:
+    """A role definition constraining an agent's capabilities."""
+    name: str
+    description: str
+    allowed_capabilities: list[str]
+    max_execution_time: int
+    can_mutate: bool
+    approval_required: bool = False
+
+
 class ManifestIntegrityError(Exception):
     """Raised when the manifest hash does not match the trusted reference."""
     pass
@@ -48,6 +59,7 @@ class CapabilityManifest:
         self.path = path
         self._raw_bytes: bytes = b''
         self._capabilities: dict[str, Capability] = {}
+        self._roles: dict[str, Role] = {}
         self._version: str = ''
         self._loaded: bool = False
 
@@ -66,6 +78,18 @@ class CapabilityManifest:
                 name=name,
                 risk_tier=RiskTier(tier_str),
             )
+            
+        roles_data = data.get('roles', {})
+        self._roles = {}
+        for name, role_info in roles_data.items():
+            self._roles[name] = Role(
+                name=name,
+                description=role_info.get('description', ''),
+                allowed_capabilities=role_info.get('allowed_capabilities', []),
+                max_execution_time=role_info.get('max_execution_time', 60),
+                can_mutate=role_info.get('can_mutate', False),
+                approval_required=role_info.get('approval_required', False),
+            )
 
         self._loaded = True
         return data
@@ -75,6 +99,12 @@ class CapabilityManifest:
         if not self._loaded:
             raise RuntimeError('Manifest not loaded — call load() first')
         return self._capabilities
+        
+    @property
+    def roles(self) -> dict[str, Role]:
+        if not self._loaded:
+            raise RuntimeError('Manifest not loaded — call load() first')
+        return self._roles
 
     @property
     def version(self) -> str:
@@ -128,6 +158,19 @@ def load_manifest(path: str, trusted_hash: str) -> CapabilityManifest:
         name: Capability(name=name, risk_tier=RiskTier(tier_str))
         for name, tier_str in caps.items()
     }
+    
+    roles_data = data.get('roles', {})
+    manifest._roles = {
+        name: Role(
+            name=name,
+            description=role_info.get('description', ''),
+            allowed_capabilities=role_info.get('allowed_capabilities', []),
+            max_execution_time=role_info.get('max_execution_time', 60),
+            can_mutate=role_info.get('can_mutate', False),
+            approval_required=role_info.get('approval_required', False),
+        ) for name, role_info in roles_data.items()
+    }
+    
     manifest._loaded = True
 
     return manifest

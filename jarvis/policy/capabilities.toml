@@ -42,3 +42,51 @@ browser_type = "safe"
 browser_click = "approval"
 browser_download = "approval"
 browser_upload = "approval"
+
+[roles.orchestrator]
+description = "High-level decomposition and task coordination"
+allowed_capabilities = [
+    "agent.delegate",
+    "agent.summarize"
+]
+max_execution_time = 60
+can_mutate = false
+
+[roles.system_diagnostics]
+description = "Host state inspection and read-only troubleshooting"
+allowed_capabilities = [
+    "system_info",
+    "system_temperature",
+    "network_interfaces",
+    "network_status",
+    "processes_list",
+    "logs_search",
+    "files_read",
+    "command_execute"
+]
+max_execution_time = 45
+can_mutate = false
+
+[roles.system_maintenance]
+description = "Controlled host mutation and remediation"
+allowed_capabilities = [
+    "service_restart",
+    "files_write",
+    "package_install"
+]
+max_execution_time = 30
+can_mutate = true
+approval_required = true
+
+[roles.browser_research]
+description = "Web retrieval and doc lookups in isolated domain"
+allowed_capabilities = [
+    "browser_navigate",
+    "browser_read",
+    "browser_type",
+    "browser_click",
+    "browser_download",
+    "browser_upload"
+]
+max_execution_time = 60
+can_mutate = false
