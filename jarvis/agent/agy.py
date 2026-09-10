@@ -107,7 +107,9 @@ class AGYBackend(AgentBackend):
                 read_only_paths=[
                     (os.path.join(session_dir, 'config'), '/home/agent/.gemini/config'),
                     (os.path.join(session_dir, 'mcp_bridge.py'), '/home/agent/mcp_bridge.py'),
-                    (self.agy_path, '/home/agent/agy')
+                    (self.agy_path, '/home/agent/agy'),
+                    ('/etc/hosts', '/etc/hosts'),
+                    ('/etc/resolv.conf', '/etc/resolv.conf')
                 ],
                 writable_paths=[
                     (os.path.join(session_dir, 'antigravity-cli'), '/home/agent/.gemini/antigravity-cli')

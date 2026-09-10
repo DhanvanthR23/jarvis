@@ -19,6 +19,7 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
     agent = None
     if backend_name == "agy":
         try:
+            os.makedirs("/tmp/jarvis_workspace", exist_ok=True)
             agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace")
         except Exception as e:
             print(f"Warning: AGYBackend failed to initialize: {e}. Falling back to MockAgent.", file=sys.stderr)
