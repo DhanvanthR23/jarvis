@@ -50,6 +50,7 @@ def main():
     parser.add_argument("query", nargs="*", help="Non-interactive query string")
     parser.add_argument("--voice", action="store_true", help="Launch Voice Runtime")
     parser.add_argument("--voice-engine", choices=["vosk", "faster-whisper"], default="vosk", help="Voice engine to use for STT/TTS (defaults to vosk)")
+    parser.add_argument("--voice-name", default=None, help="Specific voice to use for Kokoro TTS (defaults to JARVIS_VOICE_NAME env var or am_michael)")
     parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
     args = parser.parse_args()
 
@@ -90,16 +91,19 @@ def main():
             # Voice Engine Selection
             if getattr(args, 'voice_engine', 'vosk') == 'faster-whisper':
                 from jarvis.voice.stt.faster_whisper import FasterWhisperSTT
-                from jarvis.voice.tts.kokoro import KokoroTTS
+                from jarvis.voice.tts.kokoro import KokoroTTS, VALID_VOICES, resolve_kokoro_voice_name
+                
+                resolved_voice_name = resolve_kokoro_voice_name(getattr(args, 'voice_name', None))
+                
                 stt = FasterWhisperSTT(model_size="base.en", compute_type="int8")
-                tts = KokoroTTS(playback)
+                tts = KokoroTTS(playback, voice_name=resolved_voice_name)
                 
                 if not stt.is_available() or not tts.is_available():
                     print(f"⚠️  Dependencies missing for faster-whisper/kokoro (pip install faster-whisper kokoro-onnx). Falling back to Vosk.", file=sys.stderr)
                     stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")
                     tts = PiperTTS(playback)
                 else:
-                    print("🚀 Using faster-whisper and Kokoro (High Accuracy/Local)")
+                    print(f"🚀 Using faster-whisper and Kokoro (Voice: {resolved_voice_name})")
             else:
                 # Medium model (128MB) - excellent balance of speed and accuracy
                 stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")

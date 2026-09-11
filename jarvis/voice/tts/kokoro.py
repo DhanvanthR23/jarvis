@@ -10,10 +10,26 @@ from typing import Optional
 from jarvis.voice.tts.interface import TextToSpeech
 from jarvis.voice.audio import AudioPlayback
 
+VALID_VOICES = [
+    "af_alloy", "af_aoede", "af_bella", "af_jessica", "af_kore",
+    "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky",
+    "am_adam", "am_echo", "am_eric", "am_fenrir", "am_liam",
+    "am_michael", "am_onyx", "am_puck", "am_santa"
+]
+
+def resolve_kokoro_voice_name(cli_arg: Optional[str] = None) -> str:
+    import os
+    import sys
+    name = cli_arg or os.environ.get("JARVIS_VOICE_NAME") or "am_michael"
+    if name not in VALID_VOICES:
+        print(f"⚠️  Warning: '{name}' is not a valid voice name. Valid options are: {', '.join(VALID_VOICES)}. Falling back to 'am_michael'.", file=sys.stderr)
+        return "am_michael"
+    return name
+
 class KokoroTTS(TextToSpeech):
     """Local TTS using the Kokoro engine via ONNX."""
 
-    def __init__(self, playback: AudioPlayback, model_path: str = "kokoro-v1.0.onnx", voices_path: str = "voices-v1.0.bin", voice_name: str = "af_sarah"):
+    def __init__(self, playback: AudioPlayback, model_path: str = "kokoro-v1.0.onnx", voices_path: str = "voices-v1.0.bin", voice_name: str = "am_michael"):
         self._playback = playback
         self._available = False
         self._model_path = model_path
