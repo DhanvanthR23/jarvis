@@ -1,9 +1,12 @@
-import pyaudio
-import threading
-import sys
-import os
 import contextlib
-from jarvis.voice.audio import AudioCapture, AudioPlayback, AudioChunk
+import os
+import sys
+import threading
+
+import pyaudio
+
+from jarvis.voice.audio import AudioCapture, AudioChunk, AudioPlayback
+
 
 @contextlib.contextmanager
 def suppress_alsa_warnings():
@@ -78,8 +81,8 @@ class PyAudioPlayback(AudioPlayback):
         return True
 
     def play(self, audio: bytes):
-        import wave
         import io
+        import wave
         with wave.open(io.BytesIO(audio), 'rb') as wf:
             self.stream = self.p.open(format=self.p.get_format_from_width(wf.getsampwidth()),
                                       channels=wf.getnchannels(),

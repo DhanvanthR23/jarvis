@@ -1,10 +1,14 @@
 """Tests for sandbox launcher (G2)."""
 
-import os
 import unittest
+
 from jarvis.sandbox.launcher import (
-    SandboxConfig, SandboxError, DEFAULT_ENV, FORBIDDEN_ENV_VARS,
-    build_bwrap_command, is_forbidden_env,
+    DEFAULT_ENV,
+    FORBIDDEN_ENV_VARS,
+    SandboxConfig,
+    SandboxError,
+    build_bwrap_command,
+    is_forbidden_env,
 )
 
 
@@ -31,7 +35,7 @@ class TestBuildBwrapCommand(unittest.TestCase):
 
     def test_default_env_set(self):
         for key, value in DEFAULT_ENV.items():
-            idx = self.cmd.index('--setenv')
+            self.cmd.index('--setenv')
             # Find the specific setenv for this key
             found = False
             for i, arg in enumerate(self.cmd):
@@ -109,6 +113,7 @@ class TestSandboxError(unittest.TestCase):
     def test_no_unsandboxed_fallback_in_source(self):
         """Structural test: verify no fallback patterns in launcher source."""
         import inspect
+
         from jarvis.sandbox import launcher
         source = inspect.getsource(launcher)
         # Must not contain patterns that suggest unsandboxed fallback

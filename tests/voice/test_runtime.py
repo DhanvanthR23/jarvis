@@ -1,8 +1,9 @@
 """Tests for VoiceRuntime."""
 import unittest
+
+from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
 from jarvis.voice.runtime import VoiceRuntime
 from jarvis.voice.state import VoiceState
-from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
 from jarvis.voice.stt.interface import SpeechToText, Transcript
 from jarvis.voice.tts.interface import TextToSpeech
 

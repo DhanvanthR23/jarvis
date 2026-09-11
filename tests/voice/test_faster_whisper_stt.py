@@ -1,7 +1,9 @@
 """Tests for local faster-whisper STT (G27.6)."""
 import unittest
+
 from jarvis.voice.stt.faster_whisper import FasterWhisperSTT
 from jarvis.voice.stt.interface import Transcript
+
 
 class TestFasterWhisperSTT(unittest.TestCase):
     def setUp(self):

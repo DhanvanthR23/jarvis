@@ -6,11 +6,11 @@ Includes structural tests that verify no unsandboxed fallback path exists.
 import ast
 import inspect
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from jarvis.sandbox.launcher import SandboxConfig, SandboxError
+from jarvis.sandbox.preflight import CheckResult, PreflightResult
 from jarvis.sandbox.secure_launcher import SecureLauncher
-from jarvis.sandbox.preflight import PreflightResult, CheckResult
 
 
 def _make_failing_preflight():
@@ -71,7 +71,7 @@ class TestSecureLauncher(unittest.TestCase):
         """Successful preflight + verification → command executes."""
         mock_preflight.return_value = _make_passing_preflight()
         mock_run.return_value = MagicMock(returncode=0)
-        result = self.launcher.launch(['/usr/bin/true'])
+        self.launcher.launch(['/usr/bin/true'])
         mock_run.assert_called_once()
 
     def test_no_unsandboxed_fallback_structural(self):

@@ -5,12 +5,12 @@ These tests run actual bwrap commands.
 """
 
 import os
-import shutil
 import tempfile
 import unittest
+
 import pytest
 
-from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
+from tests.sandbox.helpers import REQUIRE_BWRAP, run_in_sandbox
 
 
 @pytest.mark.integration
@@ -54,8 +54,8 @@ class TestFilesystemIsolation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as ws:
             result = run_in_sandbox(
                 ['/usr/bin/sh', '-c',
-                 'echo created > /home/agent/workspace/new.txt && '
-                 'cat /home/agent/workspace/new.txt'],
+                 ('echo created > /home/agent/workspace/new.txt && '
+                 'cat /home/agent/workspace/new.txt')],
                 workspace_dir=ws,
             )
             self.assertEqual(result.returncode, 0)

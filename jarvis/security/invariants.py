@@ -7,7 +7,6 @@ Security tests reference these IDs to ensure coverage.
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict
 
 
 class ViolationResponse(Enum):
@@ -29,7 +28,7 @@ class SecurityInvariant:
 
 # The canonical set of invariants from the threat model.
 # Adding, removing, or modifying an invariant is itself a security-sensitive change.
-INVARIANTS: Dict[str, SecurityInvariant] = {}
+INVARIANTS: dict[str, SecurityInvariant] = {}
 
 def _register(inv: SecurityInvariant) -> SecurityInvariant:
     INVARIANTS[inv.id] = inv

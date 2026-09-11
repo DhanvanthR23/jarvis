@@ -2,8 +2,9 @@
 
 Provides structured access to system information without arbitrary shell execution.
 """
-import subprocess
 import os
+import subprocess
+
 
 def system_info() -> dict:
     """Get basic system information."""

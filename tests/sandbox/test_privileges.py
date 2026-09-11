@@ -1,9 +1,10 @@
 """Sandbox privilege escalation tests (G3)."""
 
 import unittest
+
 import pytest
 
-from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
+from tests.sandbox.helpers import REQUIRE_BWRAP, run_in_sandbox
 
 
 @pytest.mark.integration

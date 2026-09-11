@@ -3,8 +3,7 @@
 Manages trace_id, span_id, and parent_span_id for distributed execution.
 """
 import uuid
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 @dataclass
@@ -12,7 +11,7 @@ class ExecutionContext:
     """Represents the execution context of a specific agent turn."""
     trace_id: str
     span_id: str
-    parent_span_id: Optional[str]
+    parent_span_id: str | None
     agent_id: str
     agent_role: str
 

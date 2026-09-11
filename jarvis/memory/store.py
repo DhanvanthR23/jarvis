@@ -1,7 +1,7 @@
 import sqlite3
-import time
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+
 
 class MemoryCategory(Enum):
     SYSTEM_PROFILE = "system_profile"
@@ -60,7 +60,7 @@ class MemoryStore:
             return None
         return MemoryEntry(row[0], row[1], MemoryCategory(row[2]), row[3], row[4], row[5], row[6])
 
-    def search(self, category: MemoryCategory = None, query: str = None) -> list:
+    def search(self, category: MemoryCategory = None, query: str | None = None) -> list:
         sql = "SELECT * FROM memory WHERE 1=1"
         params = []
         if category:

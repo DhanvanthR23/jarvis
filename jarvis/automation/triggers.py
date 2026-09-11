@@ -3,9 +3,8 @@
 Events are untrusted input (Invariant Z). An event only selects a job —
 it cannot modify capability, arguments, authorization, or privilege.
 """
-from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional
 import uuid
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -75,7 +74,7 @@ class EventRouter:
     """
 
     def __init__(self):
-        self._bindings: Dict[str, str] = {}  # event_def_id -> job_id
+        self._bindings: dict[str, str] = {}  # event_def_id -> job_id
         self._evaluator = ConditionEvaluator()
 
     def bind(self, event_def: EventDefinition, job_id: str) -> None:
@@ -86,7 +85,7 @@ class EventRouter:
         """Remove an event binding."""
         self._bindings.pop(event_def_id, None)
 
-    def route(self, event: Event, event_defs: List[EventDefinition]) -> List[str]:
+    def route(self, event: Event, event_defs: list[EventDefinition]) -> list[str]:
         """Route an event to matching job IDs.
 
         Returns list of job_ids whose event definitions match.

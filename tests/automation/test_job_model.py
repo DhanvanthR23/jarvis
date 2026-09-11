@@ -1,9 +1,12 @@
 """Tests for Automation Job Model (G25.2)."""
 import time
 import unittest
+
 from jarvis.automation.models import (
-    AutomationJob, JobStatus, TriggerType, ConcurrencyPolicy,
-    ScheduleTrigger, EventTrigger,
+    AutomationJob,
+    JobStatus,
+    ScheduleTrigger,
+    TriggerType,
 )
 
 

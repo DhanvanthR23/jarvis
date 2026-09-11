@@ -1,5 +1,6 @@
 import os
 
+
 class AuditAnchor:
     def __init__(self, anchor_path: str):
         self.anchor_path = anchor_path

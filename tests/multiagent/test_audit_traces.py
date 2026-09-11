@@ -1,5 +1,6 @@
 """Audit trace tracking and approval tests for Multi-Agent (G26)."""
 import unittest
+
 from jarvis.orchestrator.context import ExecutionContext
 
 
@@ -24,7 +25,7 @@ class TestMultiAgentAuditAndApprovals(unittest.TestCase):
         # The PolicyEngine checks the capability tier, not the role tier,
         # so approval is ALWAYS required for mutation tools.
         # This is an architectural invariant.
-        from jarvis.policy.manifest import RiskTier, Capability
+        from jarvis.policy.manifest import Capability, RiskTier
         cap = Capability("service_restart", RiskTier.APPROVAL)
         self.assertEqual(cap.risk_tier, RiskTier.APPROVAL)
 

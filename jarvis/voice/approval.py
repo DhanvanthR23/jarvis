@@ -3,9 +3,15 @@
 Integrates with JarvisController to suspend execution and create a 
 VoicePendingApproval in the VoiceSession.
 """
-from jarvis.policy.approval import ApprovalHandler, ApprovalRequest, ApprovalResponse, ApprovalDecision
-from jarvis.voice.session import VoiceSession
 import time
+
+from jarvis.policy.approval import (
+    ApprovalDecision,
+    ApprovalHandler,
+    ApprovalRequest,
+    ApprovalResponse,
+)
+from jarvis.voice.session import VoiceSession
 
 
 class VoiceApprovalHandler(ApprovalHandler):
@@ -18,7 +24,7 @@ class VoiceApprovalHandler(ApprovalHandler):
         """Create a pending approval and return DENY to the agent with instructions."""
         
         # Create pending approval
-        pending = self.voice_session.create_approval(
+        self.voice_session.create_approval(
             capability=request.capability,
             arguments=request.arguments
         )

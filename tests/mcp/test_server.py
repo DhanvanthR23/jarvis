@@ -1,8 +1,10 @@
 import os
-import time
 import tempfile
+import time
 import unittest
-from jarvis.mcp.server import MCPServer, MCPClient
+
+from jarvis.mcp.server import MCPClient, MCPServer
+
 
 class TestMCPServer(unittest.TestCase):
     def setUp(self):

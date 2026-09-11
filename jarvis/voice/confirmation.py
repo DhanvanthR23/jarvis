@@ -1,8 +1,9 @@
 """Voice confirmation logic (G24.8)."""
 
+import re
+
 from jarvis.voice.session import VoiceSession
 from jarvis.voice.stt.interface import Transcript
-import re
 
 CONFIRMATION_PATTERN = re.compile(r'(?i)yes jarvis,? confirm')
 

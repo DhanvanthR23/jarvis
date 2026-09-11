@@ -2,7 +2,8 @@
 
 import unittest
 from unittest.mock import patch
-from jarvis.sandbox.preflight import run_preflight, PreflightResult, CheckResult
+
+from jarvis.sandbox.preflight import CheckResult, PreflightResult, run_preflight
 
 
 class TestPreflight(unittest.TestCase):
@@ -23,7 +24,7 @@ class TestPreflight(unittest.TestCase):
 
     def test_check_result_fields(self):
         result = run_preflight()
-        for name, check in result.checks.items():
+        for check in result.checks.values():
             self.assertIsInstance(check, CheckResult)
             self.assertIsInstance(check.name, str)
             self.assertIsInstance(check.passed, bool)

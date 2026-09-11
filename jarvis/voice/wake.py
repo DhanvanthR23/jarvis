@@ -4,7 +4,7 @@ Jarvis remains IDLE and deaf until a wake word or hotkey is detected.
 """
 import threading
 from abc import ABC, abstractmethod
-from typing import Callable
+from collections.abc import Callable
 
 
 class WakeEngine(ABC):

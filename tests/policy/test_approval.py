@@ -1,6 +1,13 @@
 import time
 import unittest
-from jarvis.policy.approval import ApprovalRequest, ApprovalResponse, ApprovalDecision, SessionApprovalCache
+
+from jarvis.policy.approval import (
+    ApprovalDecision,
+    ApprovalRequest,
+    ApprovalResponse,
+    SessionApprovalCache,
+)
+
 
 class TestApprovalSystem(unittest.TestCase):
 

@@ -1,5 +1,6 @@
 """Tests for audio abstraction (G24.2)."""
 import unittest
+
 from jarvis.voice.audio import AudioChunk, MockAudioCapture, MockAudioPlayback
 
 

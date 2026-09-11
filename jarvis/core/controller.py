@@ -24,7 +24,7 @@ class JarvisController:
         approval_handler=None,
         audit_logger=None,
         memory_store=None,
-        tool_registry: dict = None,
+        tool_registry: dict | None = None,
         voice_session=None,
         output_filter=None,
     ):
@@ -73,9 +73,10 @@ class JarvisController:
 
         # 2. Check for Voice Confirmation
         if is_voice and transcript and self.voice_session:
-            from jarvis.voice.confirmation import is_confirmation, process_confirmation
-            from jarvis.policy.approval import ApprovalRequest, ApprovalResponse, ApprovalDecision
             import time
+
+            from jarvis.policy.approval import ApprovalDecision, ApprovalRequest, ApprovalResponse
+            from jarvis.voice.confirmation import is_confirmation, process_confirmation
             
             self.voice_session.cleanup_expired()
             if is_confirmation(transcript):
@@ -185,8 +186,9 @@ class JarvisController:
                 ))
 
                 if self.approval_handler:
-                    from jarvis.policy.approval import ApprovalRequest
                     import time
+
+                    from jarvis.policy.approval import ApprovalRequest
                     approval_req = ApprovalRequest(
                         actor='agent',
                         capability=tool_name,

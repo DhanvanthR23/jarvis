@@ -1,10 +1,11 @@
 import unittest
+
 from jarvis.security.invariants import (
-    INVARIANTS,
     EXPECTED_INVARIANT_IDS,
     EXPECTED_THREATS,
-    SecurityInvariant
+    INVARIANTS,
 )
+
 
 class TestInvariants(unittest.TestCase):
     def test_expected_invariant_ids(self):
@@ -24,6 +25,6 @@ class TestInvariants(unittest.TestCase):
             self.assertEqual(inv_id, inv.id)
 
     def test_invariant_immutable(self):
-        inv = list(INVARIANTS.values())[0]
+        inv = next(iter(INVARIANTS.values()))
         with self.assertRaises(Exception):
             inv.name = "Modified"

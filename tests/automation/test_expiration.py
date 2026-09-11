@@ -1,21 +1,22 @@
 """Tests for Revocation and Expiration (G25.10)."""
 import time
 import unittest
-from jarvis.automation.models import AutomationJob, TriggerType, ScheduleTrigger, JobStatus
+
 from jarvis.automation.authorization import AuthorizationStore
+from jarvis.automation.models import AutomationJob, JobStatus, ScheduleTrigger, TriggerType
 from jarvis.automation.scheduler import AutomationScheduler, JobStore
 
 
 class TestRevocationExpiration(unittest.TestCase):
 
     def _make_job(self, **kwargs):
-        defaults = dict(
-            name="test",
-            capability="network.status",
-            arguments={},
-            trigger_type=TriggerType.SCHEDULE,
-            schedule=ScheduleTrigger(interval_seconds=1800),
-        )
+        defaults = {
+            "name": "test",
+            "capability": "network.status",
+            "arguments": {},
+            "trigger_type": TriggerType.SCHEDULE,
+            "schedule": ScheduleTrigger(interval_seconds=1800),
+        }
         defaults.update(kwargs)
         return AutomationJob(**defaults)
 
@@ -47,7 +48,7 @@ class TestRevocationExpiration(unittest.TestCase):
         self.assertEqual(len(executed), 0)
 
     def test_revoke_by_job_id_blocks_all_versions(self):
-        job_store = JobStore()
+        JobStore()
         auth_store = AuthorizationStore()
 
         job = self._make_job()

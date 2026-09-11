@@ -1,10 +1,11 @@
+import tempfile
 """Tests for AGYBackend adapter (G15/G16)."""
 
 import os
 import shutil
 import subprocess
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from jarvis.agent.agy import AGYBackend
 from jarvis.sandbox.launcher import SandboxError
@@ -114,6 +115,6 @@ class TestAGYBackend(unittest.TestCase):
             self.assertEqual(result, 'AGY execution timed out.')
 
 
-import tempfile
+
 if __name__ == '__main__':
     unittest.main()

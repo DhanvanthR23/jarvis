@@ -3,15 +3,17 @@
 Verifies a read-only command completes the full pipeline without triggering approval.
 """
 import unittest
-from jarvis.core.controller import JarvisController
+
 from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
-from jarvis.voice.runtime import VoiceRuntime
-from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
-from jarvis.voice.stt.interface import SpeechToText, Transcript
-from jarvis.voice.tts.interface import TextToSpeech
+from jarvis.core.controller import JarvisController
 from jarvis.output.filter import OutputSecurityFilter
 from jarvis.policy.engine import PolicyEngine
-from jarvis.policy.manifest import CapabilityManifest, Capability, RiskTier
+from jarvis.policy.manifest import Capability, CapabilityManifest, RiskTier
+from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
+from jarvis.voice.runtime import VoiceRuntime
+from jarvis.voice.stt.interface import SpeechToText, Transcript
+from jarvis.voice.tts.interface import TextToSpeech
+
 
 class MockSTTE2E(SpeechToText):
     def transcribe(self, audio: bytes) -> Transcript:

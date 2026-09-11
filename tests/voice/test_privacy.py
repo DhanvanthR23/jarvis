@@ -1,11 +1,13 @@
 """Tests for Audio Privacy (G24.13)."""
-import unittest
 import gc
+import unittest
 import weakref
-from jarvis.voice.runtime import VoiceRuntime
+
 from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
+from jarvis.voice.runtime import VoiceRuntime
 from jarvis.voice.stt.interface import SpeechToText, Transcript
 from jarvis.voice.tts.interface import TextToSpeech
+
 
 class DummySTT(SpeechToText):
     def transcribe(self, audio: bytes) -> Transcript:

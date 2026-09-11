@@ -3,7 +3,6 @@
 Provides allowlisted, structured command execution.
 """
 import subprocess
-from typing import List
 
 # Level 2 allowlist (strict base commands)
 ALLOWLIST = {
@@ -24,7 +23,7 @@ ALLOWLIST = {
     'systemctl' # Status queries only, mutations are via service.restart
 }
 
-def command_execute(command: str, args: List[str] = None) -> str:
+def command_execute(command: str, args: list[str] | None = None) -> str:
     """Execute an allowlisted command with structured arguments."""
     if command not in ALLOWLIST:
         return f"Error: Command '{command}' is not in the allowlist."
@@ -45,4 +44,4 @@ def command_execute(command: str, args: List[str] = None) -> str:
             output += f"\nSTDERR:\n{res.stderr}"
         return output if output else f"Command '{command}' executed successfully with no output."
     except Exception as e:
-        return f"Execution error: {str(e)}"
+        return f"Execution error: {e!s}"

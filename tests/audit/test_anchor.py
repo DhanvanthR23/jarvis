@@ -1,7 +1,9 @@
 import os
 import tempfile
 import unittest
+
 from jarvis.audit.anchor import AuditAnchor
+
 
 class TestAuditAnchor(unittest.TestCase):
     def setUp(self):

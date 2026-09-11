@@ -4,7 +4,6 @@ When AGY reasons inside an automation job, it is constrained to the
 job's authorized capability set. The prompt makes scope explicit,
 but the Policy Engine is the actual enforcement mechanism.
 """
-from typing import List, Optional
 from jarvis.automation.models import AutomationJob
 
 
@@ -43,12 +42,10 @@ class AGYScopeEnforcer:
         """Check if a tool call is within the job's authorized scope."""
         if tool_name != job.capability:
             return False
-        if args != job.arguments:
-            return False
-        return True
+        return args == job.arguments
 
     def filter_calls(self, job: AutomationJob,
-                     tool_calls: List[dict]) -> tuple:
+                     tool_calls: list[dict]) -> tuple:
         """Split tool calls into allowed and denied lists.
 
         Returns (allowed, denied) where each is a list of tool call dicts.

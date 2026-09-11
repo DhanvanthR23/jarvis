@@ -1,8 +1,10 @@
 import os
 import tempfile
-import unittest
 import time
-from jarvis.memory.store import MemoryStore, MemoryEntry, MemoryCategory
+import unittest
+
+from jarvis.memory.store import MemoryCategory, MemoryEntry, MemoryStore
+
 
 class TestMemoryStore(unittest.TestCase):
     def setUp(self):

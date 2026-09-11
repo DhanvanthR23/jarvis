@@ -1,6 +1,8 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
+
 from .manifest import CapabilityManifest, RiskTier
+
 
 class PolicyDecision(Enum):
     ALLOW = "allow"
@@ -18,7 +20,7 @@ class PolicyEngine:
         self.manifest = manifest
         self.active_role = active_role
 
-    def check(self, tool_name: str, args: dict = None) -> PolicyResult:
+    def check(self, tool_name: str, args: dict | None = None) -> PolicyResult:
         if tool_name not in self.manifest.capabilities:
             return PolicyResult(PolicyDecision.DENY, tool_name, "unknown capability")
         

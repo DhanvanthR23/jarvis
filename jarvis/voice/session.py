@@ -8,7 +8,6 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 
 @dataclass
@@ -64,7 +63,7 @@ class VoiceSession:
 
     def __init__(self, session_id: str = ''):
         self.session_id = session_id or str(uuid.uuid4())
-        self._pending: Dict[str, VoicePendingApproval] = {}
+        self._pending: dict[str, VoicePendingApproval] = {}
 
     def create_approval(self, capability: str, arguments: dict) -> VoicePendingApproval:
         """Create a new pending approval bound to this session."""
@@ -76,7 +75,7 @@ class VoiceSession:
         self._pending[approval.approval_id] = approval
         return approval
 
-    def get_pending(self, approval_id: str) -> Optional[VoicePendingApproval]:
+    def get_pending(self, approval_id: str) -> VoicePendingApproval | None:
         """Retrieve a pending approval by ID. Returns None if not found."""
         return self._pending.get(approval_id)
 
@@ -84,7 +83,7 @@ class VoiceSession:
         """Return all currently valid (non-consumed, non-denied, non-expired) approvals."""
         return [a for a in self._pending.values() if a.is_valid()]
 
-    def resolve_confirmation(self, approval_id: str) -> Optional[VoicePendingApproval]:
+    def resolve_confirmation(self, approval_id: str) -> VoicePendingApproval | None:
         """Attempt to resolve a confirmation to exactly one pending approval.
 
         Returns the approval if valid; None otherwise.

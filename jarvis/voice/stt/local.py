@@ -3,12 +3,11 @@
 Wraps vosk in the SpeechToText interface.
 Ensures audio is not retained.
 """
+import io
 import json
 import os
 import threading
 import wave
-import io
-from typing import Optional
 
 from jarvis.voice.stt.interface import SpeechToText, Transcript
 

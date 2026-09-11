@@ -9,12 +9,12 @@ import os
 import shutil
 import subprocess
 import tempfile
-from typing import Callable
+from collections.abc import Callable
 
 from jarvis.agent.interface import AgentBackend
-from jarvis.sandbox.launcher import SandboxConfig
-from jarvis.sandbox.secure_launcher import SecureLauncher, SandboxError
 from jarvis.mcp.server import MCPServer
+from jarvis.sandbox.launcher import SandboxConfig
+from jarvis.sandbox.secure_launcher import SandboxError, SecureLauncher
 
 MCP_BRIDGE_SCRIPT = '''import socket, sys, select
 sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -37,7 +37,7 @@ sock.close()
 class AGYBackend(AgentBackend):
     """Integrates the AGY CLI within the Jarvis sandbox."""
 
-    def __init__(self, workspace_dir: str, creds_paths: list = None):
+    def __init__(self, workspace_dir: str, creds_paths: list | None = None):
         self.workspace_dir = workspace_dir
         self.creds_paths = creds_paths or []
         # Locate AGY binary once on initialization

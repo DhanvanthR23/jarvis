@@ -1,9 +1,11 @@
 """Tests for Voice -> Controller integration (G24.7)."""
 import unittest
-from jarvis.core.controller import JarvisController
+
 from jarvis.agent.mock import MockAgent, ScriptedScenario
-from jarvis.output.filter import OutputSecurityFilter, SAFE_REPLACEMENT
+from jarvis.core.controller import JarvisController
+from jarvis.output.filter import SAFE_REPLACEMENT, OutputSecurityFilter
 from jarvis.voice.stt.interface import Transcript
+
 
 class TestVoiceControllerIntegration(unittest.TestCase):
     def setUp(self):
@@ -19,7 +21,7 @@ class TestVoiceControllerIntegration(unittest.TestCase):
             output_filter=self.output_filter
         )
 
-    def test_process_request_filters_output(self):
+    def test_process_voice_request_filters_output(self):
         # If AGY returns a secret in freeform text, it should be blocked.
         transcript = Transcript(text="What is the key?", confidence=0.95)
         
@@ -38,12 +40,12 @@ class TestVoiceControllerIntegration(unittest.TestCase):
 
     def test_voice_cannot_bypass_policy(self):
         # Even if voice transcription returns something, policy blocks tool execution
-        from jarvis.policy.engine import PolicyEngine
+        from jarvis.agent.mock import ScriptedScenario, ScriptedStep
         from jarvis.core.events import EventType
-        from jarvis.agent.mock import ScriptedStep, ScriptedScenario
-        
+        from jarvis.policy.engine import PolicyEngine
+
         # Disable command_execute in policy
-        from jarvis.policy.manifest import CapabilityManifest, Capability, RiskTier
+        from jarvis.policy.manifest import Capability, CapabilityManifest, RiskTier
         manifest = CapabilityManifest('dummy')
         manifest._capabilities = {'command_execute': Capability('command_execute', RiskTier.DISABLED)}
         manifest._loaded = True

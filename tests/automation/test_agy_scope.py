@@ -1,7 +1,8 @@
 """Tests for AGY Constrained Automation (G25.13)."""
 import unittest
+
+from jarvis.automation.agy_scope import AGYScopeEnforcer, AutomationPromptBuilder
 from jarvis.automation.models import AutomationJob
-from jarvis.automation.agy_scope import AutomationPromptBuilder, AGYScopeEnforcer
 
 
 class TestAGYScope(unittest.TestCase):

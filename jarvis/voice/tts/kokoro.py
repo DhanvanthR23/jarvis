@@ -3,12 +3,11 @@
 Wraps kokoro-onnx in the TextToSpeech interface.
 """
 import io
-import wave
 import threading
-from typing import Optional
+import wave
 
-from jarvis.voice.tts.interface import TextToSpeech
 from jarvis.voice.audio import AudioPlayback
+from jarvis.voice.tts.interface import TextToSpeech
 
 VALID_VOICES = [
     "af_alloy", "af_aoede", "af_bella", "af_jessica", "af_kore",
@@ -17,7 +16,7 @@ VALID_VOICES = [
     "am_michael", "am_onyx", "am_puck", "am_santa"
 ]
 
-def resolve_kokoro_voice_name(cli_arg: Optional[str] = None) -> str:
+def resolve_kokoro_voice_name(cli_arg: str | None = None) -> str:
     import os
     import sys
     name = cli_arg or os.environ.get("JARVIS_VOICE_NAME") or "am_michael"

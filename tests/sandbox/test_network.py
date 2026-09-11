@@ -4,9 +4,10 @@ Verifies that the sandbox has controlled network access required for AGY. and th
 """
 
 import unittest
+
 import pytest
 
-from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
+from tests.sandbox.helpers import REQUIRE_BWRAP, run_in_sandbox
 
 
 @pytest.mark.integration
@@ -18,8 +19,8 @@ class TestNetworkIsolation(unittest.TestCase):
         # Try to create a TCP socket — should succeed because we use --share-net
         result = run_in_sandbox([
             '/usr/bin/python3', '-c',
-            'import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); '
-            's.settimeout(1); s.connect(("8.8.8.8", 53))',
+            ('import socket; s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); '
+            's.settimeout(1); s.connect(("8.8.8.8", 53))'),
         ])
         self.assertEqual(result.returncode, 0)
 

@@ -40,7 +40,6 @@ VALID_TRANSITIONS = frozenset({
 
 class InvalidTransitionError(Exception):
     """Raised when an invalid state transition is attempted."""
-    pass
 
 
 class VoiceStateMachine:

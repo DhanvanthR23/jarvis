@@ -1,23 +1,24 @@
 """Tests for Automation Policy (G25.6)."""
 import time
 import unittest
-from jarvis.automation.models import AutomationJob, TriggerType, ScheduleTrigger, JobStatus
+
 from jarvis.automation.authorization import AuthorizationStore
+from jarvis.automation.models import AutomationJob, JobStatus, ScheduleTrigger, TriggerType
 from jarvis.automation.policy import AutomationPolicy
 from jarvis.policy.engine import PolicyEngine
-from jarvis.policy.manifest import CapabilityManifest, Capability, RiskTier
+from jarvis.policy.manifest import Capability, CapabilityManifest, RiskTier
 
 
 class TestAutomationPolicy(unittest.TestCase):
 
     def _make_job(self, **kwargs):
-        defaults = dict(
-            name="wifi-check",
-            capability="network_status",
-            arguments={},
-            trigger_type=TriggerType.SCHEDULE,
-            schedule=ScheduleTrigger(interval_seconds=1800),
-        )
+        defaults = {
+            "name": "wifi-check",
+            "capability": "network_status",
+            "arguments": {},
+            "trigger_type": TriggerType.SCHEDULE,
+            "schedule": ScheduleTrigger(interval_seconds=1800),
+        }
         defaults.update(kwargs)
         return AutomationJob(**defaults)
 

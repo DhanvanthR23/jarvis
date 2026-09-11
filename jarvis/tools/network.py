@@ -1,6 +1,7 @@
 """Read-only Network capabilities."""
 import subprocess
 
+
 def network_interfaces() -> str:
     """Get network interfaces information."""
     res = subprocess.run(['ip', 'addr'], capture_output=True, text=True)

@@ -9,12 +9,12 @@ Execution pipeline per trigger:
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable, Dict, List, Optional
 
-from jarvis.automation.models import AutomationJob, JobStatus, TriggerType
 from jarvis.automation.authorization import AuthorizationStore, AutomationAuthorization
+from jarvis.automation.models import AutomationJob, TriggerType
 
 
 class ExecutionStatus(Enum):
@@ -39,8 +39,8 @@ class ExecutionRecord:
     actual_start: float = 0.0
     actual_end: float = 0.0
     status: ExecutionStatus = ExecutionStatus.PENDING
-    result: Optional[str] = None
-    error: Optional[str] = None
+    result: str | None = None
+    error: str | None = None
 
 
 class JobStore:
@@ -50,13 +50,13 @@ class JobStore:
     """
 
     def __init__(self):
-        self._jobs: Dict[str, AutomationJob] = {}
+        self._jobs: dict[str, AutomationJob] = {}
 
     def add(self, job: AutomationJob) -> None:
         """Add or update a job in the store."""
         self._jobs[job.job_id] = job
 
-    def get(self, job_id: str) -> Optional[AutomationJob]:
+    def get(self, job_id: str) -> AutomationJob | None:
         """Retrieve a job by ID."""
         return self._jobs.get(job_id)
 
@@ -67,11 +67,11 @@ class JobStore:
             return True
         return False
 
-    def list_enabled(self) -> List[AutomationJob]:
+    def list_enabled(self) -> list[AutomationJob]:
         """List all enabled, non-expired jobs."""
         return [j for j in self._jobs.values() if j.is_runnable()]
 
-    def list_all(self) -> List[AutomationJob]:
+    def list_all(self) -> list[AutomationJob]:
         """List all jobs regardless of status."""
         return list(self._jobs.values())
 
@@ -87,7 +87,7 @@ class AutomationScheduler:
                  job_store: JobStore,
                  auth_store: AuthorizationStore,
                  executor: Callable[[AutomationJob, AutomationAuthorization, ExecutionRecord], None],
-                 policy_check: Optional[Callable[[AutomationJob], bool]] = None,
+                 policy_check: Callable[[AutomationJob], bool] | None = None,
                  max_concurrent: int = 5):
         self.job_store = job_store
         self.auth_store = auth_store
@@ -96,11 +96,11 @@ class AutomationScheduler:
         self._max_concurrent = max_concurrent
 
         self._running = False
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._tick_interval = 1.0  # seconds between scheduler ticks
-        self._execution_history: List[ExecutionRecord] = []
-        self._active_executions: Dict[str, ExecutionRecord] = {}  # job_id -> record
-        self._last_run_times: Dict[str, float] = {}  # job_id -> last run timestamp
+        self._execution_history: list[ExecutionRecord] = []
+        self._active_executions: dict[str, ExecutionRecord] = {}  # job_id -> record
+        self._last_run_times: dict[str, float] = {}  # job_id -> last run timestamp
         self._lock = threading.Lock()
 
     def start(self) -> None:
@@ -143,10 +143,7 @@ class AutomationScheduler:
             return False
 
         # Check schedule interval
-        if (now - last_run) >= job.schedule.interval_seconds:
-            return True
-
-        return False
+        return now - last_run >= job.schedule.interval_seconds
 
     def _dispatch(self, job: AutomationJob) -> None:
         """Dispatch a job for execution through the full verification pipeline."""
@@ -203,7 +200,7 @@ class AutomationScheduler:
             if job.job_id in self._active_executions:
                 del self._active_executions[job.job_id]
 
-    def trigger_manual(self, job_id: str) -> Optional[ExecutionRecord]:
+    def trigger_manual(self, job_id: str) -> ExecutionRecord | None:
         """Manually trigger a specific job (outside of the schedule loop)."""
         with self._lock:
             job = self.job_store.get(job_id)
@@ -214,7 +211,7 @@ class AutomationScheduler:
                 return self._execution_history[-1]
             return None
 
-    def get_execution_history(self, job_id: Optional[str] = None) -> List[ExecutionRecord]:
+    def get_execution_history(self, job_id: str | None = None) -> list[ExecutionRecord]:
         """Retrieve execution history, optionally filtered by job_id."""
         if job_id:
             return [r for r in self._execution_history if r.job_id == job_id]

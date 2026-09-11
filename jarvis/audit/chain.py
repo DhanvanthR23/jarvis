@@ -1,5 +1,6 @@
 import hashlib
 
+
 def compute_event_hash(event_data: str, previous_hash: str = '') -> str:
     return hashlib.sha256((previous_hash + event_data).encode("utf-8")).hexdigest()
 

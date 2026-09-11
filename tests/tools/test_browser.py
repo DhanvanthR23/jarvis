@@ -2,13 +2,14 @@
 import unittest
 
 from jarvis.tools.browser import (
+    browser_click,
+    browser_download,
     browser_navigate,
     browser_read,
-    browser_click,
     browser_type,
-    browser_download,
-    browser_upload
+    browser_upload,
 )
+
 
 class TestBrowser(unittest.TestCase):
     def test_browser_navigate(self):

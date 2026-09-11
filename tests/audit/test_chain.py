@@ -1,5 +1,7 @@
 import unittest
+
 from jarvis.audit.chain import AuditChain, compute_event_hash
+
 
 class TestAuditChain(unittest.TestCase):
     def test_compute_event_hash(self):

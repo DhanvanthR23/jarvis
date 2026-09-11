@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Callable, Any
+from collections.abc import Callable
+
 
 class AgentBackend(ABC):
     @abstractmethod
@@ -9,4 +10,3 @@ class AgentBackend(ABC):
         
         tool_callback signature: (tool_name: str, args: dict) -> dict
         """
-        pass

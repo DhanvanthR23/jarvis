@@ -1,7 +1,8 @@
 """Tests for automated sandbox regression (G4)."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 from jarvis.sandbox.regression import is_security_sensitive, run_security_suite
 
 

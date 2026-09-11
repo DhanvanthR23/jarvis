@@ -45,7 +45,6 @@ class Role:
 
 class ManifestIntegrityError(Exception):
     """Raised when the manifest hash does not match the trusted reference."""
-    pass
 
 
 class CapabilityManifest:

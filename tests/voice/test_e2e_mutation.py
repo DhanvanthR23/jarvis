@@ -4,17 +4,19 @@ Verifies a mutation command is properly suspended, requests voice approval,
 and executes only after explicit confirmation.
 """
 import unittest
-from jarvis.core.controller import JarvisController
+
 from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
-from jarvis.voice.runtime import VoiceRuntime
-from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
-from jarvis.voice.stt.interface import SpeechToText, Transcript
-from jarvis.voice.tts.interface import TextToSpeech
+from jarvis.core.controller import JarvisController
 from jarvis.output.filter import OutputSecurityFilter
 from jarvis.policy.engine import PolicyEngine
-from jarvis.policy.manifest import CapabilityManifest, Capability, RiskTier
-from jarvis.voice.session import VoiceSession
+from jarvis.policy.manifest import Capability, CapabilityManifest, RiskTier
 from jarvis.voice.approval import VoiceApprovalHandler
+from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
+from jarvis.voice.runtime import VoiceRuntime
+from jarvis.voice.session import VoiceSession
+from jarvis.voice.stt.interface import SpeechToText, Transcript
+from jarvis.voice.tts.interface import TextToSpeech
+
 
 class MockSTTSequence(SpeechToText):
     def __init__(self, transcripts):

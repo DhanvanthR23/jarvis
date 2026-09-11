@@ -4,19 +4,16 @@ Wraps piper-tts in the TextToSpeech interface.
 TTS has no authority and only speaks filtered text.
 """
 import io
-import os
-import subprocess
 import wave
-from typing import Optional
 
-from jarvis.voice.tts.interface import TextToSpeech
 from jarvis.voice.audio import AudioPlayback
+from jarvis.voice.tts.interface import TextToSpeech
 
 
 class PiperTTS(TextToSpeech):
     """Local TTS using the Piper engine."""
 
-    def __init__(self, playback: AudioPlayback, model_path: Optional[str] = None):
+    def __init__(self, playback: AudioPlayback, model_path: str | None = None):
         self._playback = playback
         self._available = False
         self._process = None
@@ -51,8 +48,6 @@ class PiperTTS(TextToSpeech):
         
         # Here we just generate a dummy wav for the mock playback to play,
         # simulating what piper would output.
-        import wave
-        import struct
         
         buf = io.BytesIO()
         with wave.open(buf, 'wb') as wf:

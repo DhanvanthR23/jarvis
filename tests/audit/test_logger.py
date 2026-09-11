@@ -1,7 +1,9 @@
 import os
 import tempfile
 import unittest
+
 from jarvis.audit.logger import AuditLogger
+
 
 class TestAuditLogger(unittest.TestCase):
     def setUp(self):

@@ -2,13 +2,13 @@
 
 Provides strictly bound, argument-verified approval caching for high-risk operations.
 """
-import uuid
-import time
-import json
 import hashlib
-from enum import Enum
+import json
+import time
+import uuid
 from dataclasses import dataclass, field
-from typing import Optional, Dict
+from enum import Enum
+
 
 class ApprovalDecision(Enum):
     ALLOW_ONCE = "allow_once"
@@ -35,7 +35,7 @@ class ApprovalRequest:
         """Compute a deterministic hash of the capability and its exact arguments."""
         # Sort keys to ensure deterministic JSON serialization
         arg_str = json.dumps(self.arguments, sort_keys=True)
-        payload = f"{self.capability}:{arg_str}".encode('utf-8')
+        payload = f"{self.capability}:{arg_str}".encode()
         return hashlib.sha256(payload).hexdigest()
 
 @dataclass
@@ -45,13 +45,13 @@ class ApprovalResponse:
     responded_at: float
     responded_by: str
     # If ALLOW_SESSION, it can expire
-    expires_at: Optional[float] = None
+    expires_at: float | None = None
 
 class SessionApprovalCache:
     """Strictly caches approvals bound to EXACT capabilities and arguments."""
     def __init__(self):
         # Maps request hash to expires_at (float)
-        self.active_approvals: Dict[str, float] = {}
+        self.active_approvals: dict[str, float] = {}
 
     def is_approved(self, request: ApprovalRequest) -> bool:
         """Check if this exact request is currently approved for the session."""
@@ -87,7 +87,7 @@ class AutoDenyHandler(ApprovalHandler):
 
 class CLIApprovalHandler(ApprovalHandler):
     def request_approval(self, request: ApprovalRequest) -> ApprovalResponse:
-        print(f"\n--- APPROVAL REQUIRED ---")
+        print("\n--- APPROVAL REQUIRED ---")
         print(f"Actor: {request.actor}")
         print(f"Capability: {request.capability}")
         print(f"Arguments: {json.dumps(request.arguments, indent=2)}")

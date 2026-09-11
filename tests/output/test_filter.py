@@ -1,7 +1,9 @@
 """Tests for OutputSecurityFilter (G24.11 & G24.12)."""
 import unittest
-from jarvis.output.filter import OutputSecurityFilter, SAFE_REPLACEMENT
-from jarvis.output.sensitivity import SensitivityTag, SensitivityLevel
+
+from jarvis.output.filter import SAFE_REPLACEMENT, OutputSecurityFilter
+from jarvis.output.sensitivity import SensitivityLevel, SensitivityTag
+
 
 class TestOutputSecurityFilter(unittest.TestCase):
     def setUp(self):

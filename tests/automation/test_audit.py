@@ -1,9 +1,10 @@
 """Tests for Automation Audit integration (G25.11)."""
 import unittest
 from unittest.mock import MagicMock
+
+from jarvis.automation.authorization import AutomationAuthorization
 from jarvis.automation.executor import AutomationExecutor
 from jarvis.automation.models import AutomationJob
-from jarvis.automation.authorization import AutomationAuthorization
 from jarvis.automation.scheduler import ExecutionRecord
 
 

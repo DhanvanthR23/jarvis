@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import time
-import os
 from jarvis.voice.audio import MockAudioPlayback
 from jarvis.voice.stt.local import VoskSTT
 from jarvis.voice.tts.local import PiperTTS
+
 
 def test_stt():
     print("Testing Vosk STT...")
@@ -13,7 +12,7 @@ def test_stt():
         return
     print("✅ Vosk STT is installed and available.")
     print("Initializing model (this might trigger a download if not cached)...")
-    model = stt._get_model()
+    stt._get_model()
     print("✅ Model loaded successfully!")
 
 def test_tts():

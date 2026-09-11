@@ -12,7 +12,6 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
 
 
 class TriggerType(Enum):
@@ -43,7 +42,7 @@ class ScheduleTrigger:
     Uses a simplified interval model for now; can be extended to full cron later.
     """
     interval_seconds: int
-    start_at: Optional[float] = None  # absolute timestamp; None = now
+    start_at: float | None = None  # absolute timestamp; None = now
 
 
 @dataclass(frozen=True)
@@ -73,16 +72,16 @@ class AutomationJob:
 
     # When to do it
     trigger_type: TriggerType = TriggerType.SCHEDULE
-    schedule: Optional[ScheduleTrigger] = None
-    event: Optional[EventTrigger] = None
+    schedule: ScheduleTrigger | None = None
+    event: EventTrigger | None = None
 
     # Lifecycle
     status: JobStatus = JobStatus.ENABLED
     created_at: float = field(default_factory=time.time)
-    expires_at: Optional[float] = None  # None = must be set explicitly
+    expires_at: float | None = None  # None = must be set explicitly
 
     # Execution limits
-    max_runs: Optional[int] = None
+    max_runs: int | None = None
     run_count: int = 0
     cooldown_seconds: int = 0
     max_runtime_seconds: int = 300  # 5 minutes default
@@ -116,9 +115,7 @@ class AutomationJob:
             return False
         if self.is_expired():
             return False
-        if self.max_runs is not None and self.run_count >= self.max_runs:
-            return False
-        return True
+        return not (self.max_runs is not None and self.run_count >= self.max_runs)
 
     def record_run(self) -> None:
         """Increment the run counter."""

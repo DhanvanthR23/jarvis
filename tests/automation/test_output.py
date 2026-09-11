@@ -1,11 +1,12 @@
 """Tests for Automation Output (G25.14)."""
 import unittest
 from unittest.mock import MagicMock
+
+from jarvis.automation.authorization import AutomationAuthorization
 from jarvis.automation.executor import AutomationExecutor
 from jarvis.automation.models import AutomationJob
-from jarvis.automation.authorization import AutomationAuthorization
 from jarvis.automation.scheduler import ExecutionRecord
-from jarvis.output.filter import OutputSecurityFilter, SAFE_REPLACEMENT
+from jarvis.output.filter import SAFE_REPLACEMENT, OutputSecurityFilter
 
 
 class TestAutomationOutput(unittest.TestCase):

@@ -1,26 +1,31 @@
 """Tests for Concurrency and Duplicate Execution (G25.8)."""
 import time
-import threading
 import unittest
-from jarvis.automation.models import (
-    AutomationJob, TriggerType, ScheduleTrigger, ConcurrencyPolicy,
-)
+
 from jarvis.automation.authorization import AuthorizationStore
+from jarvis.automation.models import (
+    AutomationJob,
+    ConcurrencyPolicy,
+    ScheduleTrigger,
+    TriggerType,
+)
 from jarvis.automation.scheduler import (
-    AutomationScheduler, JobStore, ExecutionStatus,
+    AutomationScheduler,
+    ExecutionStatus,
+    JobStore,
 )
 
 
 class TestConcurrency(unittest.TestCase):
 
     def _make_job(self, interval=1, **kwargs):
-        defaults = dict(
-            name="test-job",
-            capability="network.status",
-            arguments={},
-            trigger_type=TriggerType.SCHEDULE,
-            schedule=ScheduleTrigger(interval_seconds=interval),
-        )
+        defaults = {
+            "name": "test-job",
+            "capability": "network.status",
+            "arguments": {},
+            "trigger_type": TriggerType.SCHEDULE,
+            "schedule": ScheduleTrigger(interval_seconds=interval),
+        }
         defaults.update(kwargs)
         return AutomationJob(**defaults)
 
@@ -41,7 +46,7 @@ class TestConcurrency(unittest.TestCase):
         scheduler = AutomationScheduler(job_store, auth_store, executor)
 
         # Simulate an active execution by injecting into _active_executions
-        from jarvis.automation.scheduler import ExecutionRecord, ExecutionStatus
+        from jarvis.automation.scheduler import ExecutionRecord
         fake_record = ExecutionRecord(
             job_id=job.job_id, status=ExecutionStatus.STARTED,
         )

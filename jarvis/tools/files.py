@@ -2,6 +2,7 @@
 import os
 import subprocess
 
+
 def files_read(path: str) -> str:
     """Read contents of a file."""
     if not os.path.exists(path):

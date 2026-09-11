@@ -1,8 +1,9 @@
-from enum import Enum, auto
-from dataclasses import dataclass, field
 import time
 import uuid
-from typing import Dict, Any
+from dataclasses import dataclass, field
+from enum import Enum, auto
+from typing import Any
+
 
 class EventType(Enum):
     REQUEST = auto()
@@ -20,6 +21,6 @@ class EventType(Enum):
 class Event:
     type: EventType
     session_id: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     timestamp: float = field(default_factory=time.time)
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))

@@ -1,8 +1,15 @@
 import os
 import tempfile
 import unittest
-from jarvis.policy.manifest import CapabilityManifest, load_manifest, ManifestIntegrityError, RiskTier
+
+from jarvis.policy.manifest import (
+    CapabilityManifest,
+    ManifestIntegrityError,
+    RiskTier,
+    load_manifest,
+)
 from jarvis.policy.trusted_hash import compute_and_store_hash, load_trusted_hash
+
 
 class TestManifest(unittest.TestCase):
     def setUp(self):

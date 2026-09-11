@@ -3,9 +3,8 @@
 Tool results carry provenance/sensitivity tags so the OutputSecurityFilter
 knows what must never reach a presentation channel.
 """
+from dataclasses import dataclass
 from enum import Enum, auto
-from dataclasses import dataclass, field
-from typing import Optional
 
 
 class SensitivityLevel(Enum):

@@ -1,6 +1,12 @@
 """Tests for voice state machine (plan2.md section 3)."""
 import unittest
-from jarvis.voice.state import VoiceState, VoiceStateMachine, InvalidTransitionError, VALID_TRANSITIONS
+
+from jarvis.voice.state import (
+    VALID_TRANSITIONS,
+    InvalidTransitionError,
+    VoiceState,
+    VoiceStateMachine,
+)
 
 
 class TestVoiceStateMachine(unittest.TestCase):

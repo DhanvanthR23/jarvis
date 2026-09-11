@@ -1,9 +1,10 @@
 """Tests for read-only linux tools."""
 
 import unittest
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import MagicMock, mock_open, patch
 
-from jarvis.tools import system, network, processes, logs, files
+from jarvis.tools import files, logs, network, processes, system
+
 
 class TestReadOnlyTools(unittest.TestCase):
     

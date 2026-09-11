@@ -1,7 +1,9 @@
 """Tests for Wake Engine (G24.14)."""
-import unittest
 import time
-from jarvis.voice.wake import MockWakeEngine, HotkeyWakeEngine
+import unittest
+
+from jarvis.voice.wake import HotkeyWakeEngine, MockWakeEngine
+
 
 class TestWakeEngine(unittest.TestCase):
     def test_mock_wake(self):

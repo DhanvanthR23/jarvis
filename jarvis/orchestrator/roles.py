@@ -2,7 +2,7 @@
 
 Ensures that agents can only execute tools defined in their role.
 """
-from typing import Optional
+
 from jarvis.policy.manifest import CapabilityManifest, Role
 
 
@@ -20,6 +20,6 @@ class RoleValidator:
         role = self.manifest.roles[role_name]
         return tool_name in role.allowed_capabilities
 
-    def get_role(self, role_name: str) -> Optional[Role]:
+    def get_role(self, role_name: str) -> Role | None:
         """Get the role definition from the manifest."""
         return self.manifest.roles.get(role_name)

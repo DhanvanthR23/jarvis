@@ -11,11 +11,10 @@ Reports: peak RAM, sustained RAM, CPU, latency.
 import json
 import os
 import resource
-import subprocess
 import sys
 import time
 import wave
-import struct
+
 
 def get_memory_mb():
     """Current process RSS in MB."""
@@ -45,12 +44,12 @@ def stage_a():
     """Stage A: Jarvis idle baseline."""
     print("=== Stage A: Jarvis Idle Baseline ===")
     sys_mem = get_system_memory()
-    proc_rss = get_memory_mb()
+    get_memory_mb()
     
     # Import jarvis core to measure its footprint
     t0 = time.monotonic()
-    from jarvis.core.controller import JarvisController
     from jarvis.agent.mock import MockAgent
+    from jarvis.core.controller import JarvisController
     from jarvis.tools.registry import register_readonly_tools
     agent = MockAgent([])
     ctrl = JarvisController(agent_backend=agent)
@@ -77,7 +76,7 @@ def stage_b(test_wav):
     sys_mem_before = get_system_memory()
     
     t0 = time.monotonic()
-    from vosk import Model, KaldiRecognizer
+    from vosk import KaldiRecognizer, Model
     
     # Download small model if needed
     model_path = os.path.expanduser("~/.cache/vosk/vosk-model-small-en-us-0.15")
@@ -92,7 +91,7 @@ def stage_b(test_wav):
     model_load_ms = (t1 - t0) * 1000
     
     proc_rss_model = get_memory_mb()
-    sys_mem_model = get_system_memory()
+    get_system_memory()
     
     # Transcribe test audio
     rec = KaldiRecognizer(model, 16000)
@@ -103,7 +102,7 @@ def stage_b(test_wav):
             if len(data) == 0:
                 break
             rec.AcceptWaveform(data)
-        result = json.loads(rec.FinalResult())
+        json.loads(rec.FinalResult())
         t3 = time.monotonic()
     
     transcription_ms = (t3 - t2) * 1000
@@ -132,7 +131,6 @@ def stage_c(test_wav):
     t0 = time.monotonic()
     try:
         # Check if piper can be imported
-        import piper
         tts_available = True
         tts_load_ms = (time.monotonic() - t0) * 1000
     except Exception as e:
@@ -141,8 +139,8 @@ def stage_c(test_wav):
         print(f"  TTS (piper) import failed: {e}")
     
     # Simulate AGY + MCP load (JarvisController with mock agent processing)
-    from jarvis.core.controller import JarvisController
     from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
+    from jarvis.core.controller import JarvisController
     from jarvis.tools.registry import register_readonly_tools
     
     scenarios = [
@@ -180,14 +178,15 @@ def stage_c(test_wav):
 
 def main():
     print("G24.3 Resource Feasibility Benchmark")
-    print(f"Machine: {os.popen('lscpu | grep \"Model name\"').read().strip()}")
+    model_name = os.popen('lscpu | grep "Model name"').read().strip()
+    print(f'Machine: {model_name}')
     print(f"RAM: {get_system_memory()['MemTotal']} MB total")
     print()
     
     test_wav = '/tmp/jarvis_benchmark_test.wav'
     generate_test_wav(test_wav, duration_s=3)
     
-    a = stage_a()
+    stage_a()
     b = stage_b(test_wav)
     c = stage_c(test_wav)
     

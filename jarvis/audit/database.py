@@ -2,6 +2,7 @@ import sqlite3
 import uuid
 from dataclasses import dataclass, field
 
+
 @dataclass
 class AuditRecord:
     timestamp: float

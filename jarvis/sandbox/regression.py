@@ -1,7 +1,6 @@
 import fnmatch
-import unittest
 import os
-import sys
+import unittest
 
 SECURITY_SENSITIVE_PATHS = frozenset([
     'jarvis/sandbox/*',
@@ -30,10 +29,10 @@ def run_security_suite() -> bool:
     security_dir = os.path.join(start_dir, 'tests', 'security')
     
     if os.path.exists(sandbox_dir):
-        suite.addTests(loader.discover(sandbox_dir, pattern='test_*.py'))
+        suite.addTests(loader.discover(sandbox_dir, pattern='test_*.py', top_level_dir=start_dir))
         
     if os.path.exists(security_dir):
-        suite.addTests(loader.discover(security_dir, pattern='test_*.py'))
+        suite.addTests(loader.discover(security_dir, pattern='test_*.py', top_level_dir=start_dir))
         
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

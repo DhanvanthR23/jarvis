@@ -1,22 +1,23 @@
 """Tests for Automation Authorization (G25.3)."""
 import time
 import unittest
-from jarvis.automation.models import AutomationJob, TriggerType, ScheduleTrigger
+
 from jarvis.automation.authorization import (
-    AutomationAuthorization, AuthorizationStore,
+    AuthorizationStore,
 )
+from jarvis.automation.models import AutomationJob, ScheduleTrigger, TriggerType
 
 
 class TestAutomationAuthorization(unittest.TestCase):
 
     def _make_job(self, **kwargs):
-        defaults = dict(
-            name="wifi-check",
-            capability="network.status",
-            arguments={},
-            trigger_type=TriggerType.SCHEDULE,
-            schedule=ScheduleTrigger(interval_seconds=1800),
-        )
+        defaults = {
+            "name": "wifi-check",
+            "capability": "network.status",
+            "arguments": {},
+            "trigger_type": TriggerType.SCHEDULE,
+            "schedule": ScheduleTrigger(interval_seconds=1800),
+        }
         defaults.update(kwargs)
         return AutomationJob(**defaults)
 
@@ -141,7 +142,9 @@ class TestAutomationAuthorization(unittest.TestCase):
         separate systems with no bridging.
         """
         from jarvis.policy.approval import (
-            ApprovalRequest, ApprovalResponse, ApprovalDecision,
+            ApprovalDecision,
+            ApprovalRequest,
+            ApprovalResponse,
             SessionApprovalCache,
         )
 

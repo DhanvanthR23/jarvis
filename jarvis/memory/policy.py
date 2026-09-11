@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from .store import MemoryStore, MemoryEntry
+
+from .store import MemoryEntry, MemoryStore
+
 
 @dataclass
 class MemoryWriteRequest:
@@ -21,8 +23,8 @@ class MemoryPolicyEngine:
             return True
         elif request.source_type == 'agent_high_impact':
             if self.approval_handler:
+
                 from jarvis.policy.approval import ApprovalRequest
-                import time
                 approval_req = ApprovalRequest(
                     actor='agent',
                     capability='memory_write',

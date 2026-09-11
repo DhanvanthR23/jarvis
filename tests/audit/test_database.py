@@ -1,8 +1,10 @@
 import os
 import tempfile
-import unittest
 import time
+import unittest
+
 from jarvis.audit.database import AuditDatabase, AuditRecord
+
 
 class TestAuditDatabase(unittest.TestCase):
     def setUp(self):

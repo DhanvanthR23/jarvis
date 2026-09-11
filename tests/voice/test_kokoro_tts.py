@@ -1,7 +1,9 @@
 """Tests for local Kokoro TTS (G27.6)."""
 import unittest
-from jarvis.voice.tts.kokoro import KokoroTTS
+
 from jarvis.voice.audio import MockAudioPlayback
+from jarvis.voice.tts.kokoro import KokoroTTS
+
 
 class TestKokoroTTS(unittest.TestCase):
     def setUp(self):
@@ -43,8 +45,9 @@ class TestKokoroVoiceResolution(unittest.TestCase):
             del os.environ["JARVIS_VOICE_NAME"]
 
     def test_cli_flag_wins(self):
-        from jarvis.voice.tts.kokoro import resolve_kokoro_voice_name
         import os
+
+        from jarvis.voice.tts.kokoro import resolve_kokoro_voice_name
         os.environ["JARVIS_VOICE_NAME"] = "am_michael"
         
         # CLI flag is 'am_onyx', should beat the env var 'am_michael'
@@ -52,8 +55,9 @@ class TestKokoroVoiceResolution(unittest.TestCase):
         self.assertEqual(resolved, "am_onyx")
 
     def test_env_var_used_when_no_flag(self):
-        from jarvis.voice.tts.kokoro import resolve_kokoro_voice_name
         import os
+
+        from jarvis.voice.tts.kokoro import resolve_kokoro_voice_name
         os.environ["JARVIS_VOICE_NAME"] = "am_michael"
         
         # CLI flag is None
@@ -61,9 +65,10 @@ class TestKokoroVoiceResolution(unittest.TestCase):
         self.assertEqual(resolved, "am_michael")
 
     def test_invalid_name_falls_back_with_warning(self):
-        from jarvis.voice.tts.kokoro import resolve_kokoro_voice_name
         import io
         import sys
+
+        from jarvis.voice.tts.kokoro import resolve_kokoro_voice_name
         
         # Capture stderr to check for the warning
         captured_stderr = io.StringIO()

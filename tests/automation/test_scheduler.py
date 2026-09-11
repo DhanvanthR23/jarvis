@@ -1,25 +1,31 @@
 """Tests for Automation Scheduler (G25.4)."""
 import time
 import unittest
-from jarvis.automation.models import (
-    AutomationJob, TriggerType, ScheduleTrigger, JobStatus,
-)
+
 from jarvis.automation.authorization import AuthorizationStore
+from jarvis.automation.models import (
+    AutomationJob,
+    JobStatus,
+    ScheduleTrigger,
+    TriggerType,
+)
 from jarvis.automation.scheduler import (
-    AutomationScheduler, JobStore, ExecutionStatus,
+    AutomationScheduler,
+    ExecutionStatus,
+    JobStore,
 )
 
 
 class TestScheduler(unittest.TestCase):
 
     def _make_job(self, interval=1, **kwargs):
-        defaults = dict(
-            name="wifi-check",
-            capability="network.status",
-            arguments={},
-            trigger_type=TriggerType.SCHEDULE,
-            schedule=ScheduleTrigger(interval_seconds=interval),
-        )
+        defaults = {
+            "name": "wifi-check",
+            "capability": "network.status",
+            "arguments": {},
+            "trigger_type": TriggerType.SCHEDULE,
+            "schedule": ScheduleTrigger(interval_seconds=interval),
+        }
         defaults.update(kwargs)
         return AutomationJob(**defaults)
 

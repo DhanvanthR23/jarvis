@@ -56,11 +56,10 @@ BENCHMARK_SCENARIOS = [
 
 def run_benchmark(agent_backend, verbose=True):
     """Run the benchmark scenarios against a provided agent backend."""
+    from jarvis.policy.engine import PolicyEngine
     from jarvis.policy.manifest import load_manifest
     from jarvis.policy.trusted_hash import load_trusted_hash
-    from jarvis.policy.engine import PolicyEngine
     from jarvis.tools.registry import register_readonly_tools
-    import jarvis.tools.registry as registry
     
     # Setup policy
     manifest_path = 'jarvis/policy/capabilities.toml'
@@ -91,7 +90,7 @@ def run_benchmark(agent_backend, verbose=True):
         # Reset session for clean event tracking
         ctrl._session = ctrl._session.__class__()
         
-        response = ctrl.process_request(scenario['prompt'])
+        ctrl.process_request(scenario['prompt'])
         
         # Extract tools called
         tools_called = [e.data['tool_name'] for e in ctrl.session.events if e.type == EventType.TOOL_CALL]

@@ -15,7 +15,6 @@ import json
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional, Dict
 
 from jarvis.automation.models import AutomationJob
 
@@ -34,8 +33,8 @@ class AutomationAuthorization:
     allowed_trigger: str = ""  # e.g. "schedule", "event", "manual"
 
     created_at: float = field(default_factory=time.time)
-    expires_at: Optional[float] = None
-    max_runs: Optional[int] = None
+    expires_at: float | None = None
+    max_runs: int | None = None
     run_count: int = 0
 
     enabled: bool = True
@@ -49,9 +48,7 @@ class AutomationAuthorization:
             return False
         if self.expires_at is not None and time.time() > self.expires_at:
             return False
-        if self.max_runs is not None and self.run_count >= self.max_runs:
-            return False
-        return True
+        return not (self.max_runs is not None and self.run_count >= self.max_runs)
 
     def matches_job(self, job: AutomationJob) -> bool:
         """Verify this authorization matches the given job exactly.
@@ -63,9 +60,7 @@ class AutomationAuthorization:
             return False
         if self.job_version != job.version:
             return False
-        if self.job_hash != job.compute_hash():
-            return False
-        return True
+        return self.job_hash == job.compute_hash()
 
     def record_run(self) -> None:
         """Increment the run counter on this authorization."""
@@ -93,11 +88,11 @@ class AuthorizationStore:
     """
 
     def __init__(self):
-        self._authorizations: Dict[str, AutomationAuthorization] = {}
+        self._authorizations: dict[str, AutomationAuthorization] = {}
 
     def create_authorization(self, job: AutomationJob,
-                              expires_at: Optional[float] = None,
-                              max_runs: Optional[int] = None) -> AutomationAuthorization:
+                              expires_at: float | None = None,
+                              max_runs: int | None = None) -> AutomationAuthorization:
         """Create a new automation authorization for a specific job version.
 
         This is the ONLY way to authorize an automation job. Interactive
@@ -120,14 +115,14 @@ class AuthorizationStore:
         self._authorizations[auth.authorization_id] = auth
         return auth
 
-    def get_authorization_for_job(self, job: AutomationJob) -> Optional[AutomationAuthorization]:
+    def get_authorization_for_job(self, job: AutomationJob) -> AutomationAuthorization | None:
         """Find a valid authorization that matches the given job exactly."""
         for auth in self._authorizations.values():
             if auth.matches_job(job) and auth.is_valid():
                 return auth
         return None
 
-    def get_by_id(self, authorization_id: str) -> Optional[AutomationAuthorization]:
+    def get_by_id(self, authorization_id: str) -> AutomationAuthorization | None:
         """Retrieve an authorization by its ID."""
         return self._authorizations.get(authorization_id)
 

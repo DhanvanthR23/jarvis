@@ -5,12 +5,11 @@ Ensures audio is not retained.
 """
 import io
 import math
-import os
 import threading
 import wave
-from typing import Optional
 
 from jarvis.voice.stt.interface import SpeechToText, Transcript
+
 
 class FasterWhisperSTT(SpeechToText):
     """Local STT using faster-whisper."""
@@ -55,18 +54,17 @@ class FasterWhisperSTT(SpeechToText):
             import numpy as np
             with wave.open(io.BytesIO(audio), 'rb') as wf:
                 audio_data = wf.readframes(wf.getnframes())
-                sample_rate = wf.getframerate()
+                wf.getframerate()
             # Convert 16-bit PCM to float32 for faster-whisper
             audio_np = np.frombuffer(audio_data, np.int16).astype(np.float32) / 32768.0
         else:
             import numpy as np
-            sample_rate = self._sample_rate
             audio_np = np.frombuffer(audio, np.int16).astype(np.float32) / 32768.0
 
         with self._lock:
             model = self._get_model()
             # Transcribe
-            segments, info = model.transcribe(audio_np, beam_size=1)
+            segments, _info = model.transcribe(audio_np, beam_size=1)
             
             text = ""
             total_prob = 0.0

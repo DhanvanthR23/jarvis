@@ -4,11 +4,10 @@ The executor is the ONLY path from scheduler to tool execution.
 It creates an automation-specific execution context and routes through
 the Controller's normal pipeline: Policy → AGY → MCP → Tool → Audit.
 """
-from typing import Optional
 
-from jarvis.automation.models import AutomationJob
 from jarvis.automation.authorization import AutomationAuthorization
-from jarvis.automation.scheduler import ExecutionRecord, ExecutionStatus
+from jarvis.automation.models import AutomationJob
+from jarvis.automation.scheduler import ExecutionRecord
 from jarvis.output.filter import OutputSecurityFilter
 
 
@@ -19,7 +18,7 @@ class AutomationExecutor:
     existing policy/approval/audit pipeline.
     """
 
-    def __init__(self, controller, output_filter: Optional[OutputSecurityFilter] = None):
+    def __init__(self, controller, output_filter: OutputSecurityFilter | None = None):
         self.controller = controller
         self.output_filter = output_filter or OutputSecurityFilter()
 

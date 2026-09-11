@@ -1,19 +1,20 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from typing import Any
+
 
 @dataclass
 class MCPRequest:
     method: str
-    params: Dict[str, Any] = field(default_factory=dict)
+    params: dict[str, Any] = field(default_factory=dict)
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
 @dataclass
 class MCPResponse:
     id: str
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[Dict[str, Any]] = None
+    result: dict[str, Any] | None = None
+    error: dict[str, Any] | None = None
 
 def serialize_request(request: MCPRequest) -> bytes:
     data = {"method": request.method, "params": request.params, "id": request.id}

@@ -1,9 +1,10 @@
 """Role and capability validation tests for Multi-Agent (G26)."""
-import unittest
 import os
 import tempfile
-from jarvis.policy.manifest import CapabilityManifest
+import unittest
+
 from jarvis.orchestrator.roles import RoleValidator
+from jarvis.policy.manifest import CapabilityManifest
 
 
 class TestMultiAgentRoles(unittest.TestCase):

@@ -8,7 +8,6 @@ Trusted infrastructure. Two independent layers:
 Fail-closed on any integrity or configuration failure.
 """
 import re
-from typing import List, Optional
 
 from jarvis.output.sensitivity import SensitivityLevel, SensitivityTag
 
@@ -49,7 +48,7 @@ class OutputSecurityFilter:
                 "Fail-closed: filter must always be active."
             )
 
-    def filter_tagged(self, text: str, tags: List[SensitivityTag]) -> str:
+    def filter_tagged(self, text: str, tags: list[SensitivityTag]) -> str:
         """Primary layer: block output associated with SECRET/RESTRICTED tags.
 
         Args:
@@ -80,7 +79,7 @@ class OutputSecurityFilter:
                 return SAFE_REPLACEMENT
         return text
 
-    def filter(self, text: str, tags: Optional[List[SensitivityTag]] = None) -> str:
+    def filter(self, text: str, tags: list[SensitivityTag] | None = None) -> str:
         """Apply both layers. Either layer blocking produces SAFE_REPLACEMENT.
 
         Args:

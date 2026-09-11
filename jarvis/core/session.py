@@ -1,14 +1,14 @@
-import uuid
 import time
-from typing import List
+import uuid
 
 from jarvis.core.events import Event, EventType
+
 
 class Session:
     def __init__(self):
         self._session_id = str(uuid.uuid4())
         self.created_at = time.time()
-        self.events: List[Event] = []
+        self.events: list[Event] = []
         self._is_active = True
         
         self.add_event(Event(

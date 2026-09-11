@@ -13,6 +13,7 @@ CRITICAL INVARIANT: There is NO fallback to unsandboxed execution.
 import dataclasses
 import os
 import subprocess
+
 from jarvis.sandbox.preflight import run_preflight
 
 
@@ -21,7 +22,6 @@ class SandboxError(Exception):
 
     This error must NEVER be caught and converted to unsandboxed execution.
     """
-    pass
 
 
 @dataclasses.dataclass

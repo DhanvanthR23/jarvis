@@ -1,20 +1,23 @@
-from dataclasses import dataclass, field
-from typing import List, Callable, Dict, Any
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
 from jarvis.agent.interface import AgentBackend
+
 
 @dataclass
 class ScriptedStep:
     tool_name: str
-    args: Dict[str, Any]
+    args: dict[str, Any]
 
 @dataclass
 class ScriptedScenario:
     trigger: str
-    steps: List[ScriptedStep]
+    steps: list[ScriptedStep]
     response: str
 
 class MockAgent(AgentBackend):
-    def __init__(self, scenarios: List[ScriptedScenario]):
+    def __init__(self, scenarios: list[ScriptedScenario]):
         self.scenarios = scenarios
         
     def process(self, user_input: str, tool_callback: Callable[[str, dict], dict]) -> str:

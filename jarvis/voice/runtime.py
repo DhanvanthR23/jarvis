@@ -3,11 +3,10 @@
 Orchestrates the VoiceStateMachine, AudioCapture, STT, TTS, and AudioPlayback.
 Handles transition events.
 """
-import threading
-from typing import Optional, Callable
+from collections.abc import Callable
 
-from jarvis.voice.state import VoiceState, VoiceStateMachine, InvalidTransitionError
 from jarvis.voice.audio import AudioCapture, AudioPlayback
+from jarvis.voice.state import VoiceState, VoiceStateMachine
 from jarvis.voice.stt.interface import SpeechToText, Transcript
 from jarvis.voice.tts.interface import TextToSpeech
 
@@ -30,7 +29,7 @@ class VoiceRuntime:
         
         # Callback when transcription is ready for the controller
         # Signature: on_transcription(transcript: Transcript) -> None
-        self.on_transcription: Optional[Callable[[Transcript], None]] = None
+        self.on_transcription: Callable[[Transcript], None] | None = None
 
     @property
     def state(self) -> VoiceState:

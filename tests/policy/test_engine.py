@@ -1,8 +1,10 @@
 import os
 import tempfile
 import unittest
+
+from jarvis.policy.engine import PolicyDecision, PolicyEngine
 from jarvis.policy.manifest import CapabilityManifest
-from jarvis.policy.engine import PolicyEngine, PolicyDecision
+
 
 class TestPolicyEngine(unittest.TestCase):
     def setUp(self):

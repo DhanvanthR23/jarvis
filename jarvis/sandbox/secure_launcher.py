@@ -10,13 +10,13 @@ No try/except fallback. No debug mode. No dev mode. No bypass.
 
 import subprocess
 
-from jarvis.sandbox.preflight import run_preflight
 from jarvis.sandbox.launcher import (
     SandboxConfig,
     SandboxError,
     build_bwrap_command,
     verify_sandbox,
 )
+from jarvis.sandbox.preflight import run_preflight
 
 
 class SecureLauncher:

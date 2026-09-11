@@ -1,7 +1,11 @@
 """Tests for Event Triggers (G25.12)."""
 import unittest
+
 from jarvis.automation.triggers import (
-    EventDefinition, Event, ConditionEvaluator, EventRouter,
+    ConditionEvaluator,
+    Event,
+    EventDefinition,
+    EventRouter,
 )
 
 

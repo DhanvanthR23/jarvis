@@ -1,19 +1,19 @@
 """CLI Entrypoint for Jarvis."""
 import argparse
 import sys
-from jarvis.core.controller import JarvisController
+
 from jarvis.agent.mock import MockAgent  # Replace with real agent if needed? 
-from jarvis.policy.engine import PolicyEngine
-from jarvis.policy.manifest import load_manifest
-from jarvis.policy.approval import CLIApprovalHandler
 from jarvis.audit.logger import AuditLogger
-from jarvis.audit.database import AuditDatabase
+from jarvis.core.controller import JarvisController
+from jarvis.policy.approval import CLIApprovalHandler
+from jarvis.policy.engine import PolicyEngine
 
 
 def get_controller(backend_name: str = "mock") -> JarvisController:
     import os
+
     from jarvis.agent.agy import AGYBackend
-    from jarvis.agent.mock import MockAgent, DEFAULT_SCENARIOS
+    from jarvis.agent.mock import DEFAULT_SCENARIOS
     
     # Setup agent
     agent = None
@@ -99,11 +99,11 @@ def main():
 
     if args.voice:
         try:
+            from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
             from jarvis.voice.runtime import VoiceRuntime
             from jarvis.voice.state import VoiceState
             from jarvis.voice.stt.local import VoskSTT
             from jarvis.voice.tts.local import PiperTTS
-            from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
 
             # Try to load real PyAudio if installed
             try:
@@ -119,7 +119,10 @@ def main():
             # Voice Engine Selection
             if getattr(args, 'voice_engine', 'vosk') == 'faster-whisper':
                 from jarvis.voice.stt.faster_whisper import FasterWhisperSTT
-                from jarvis.voice.tts.kokoro import KokoroTTS, VALID_VOICES, resolve_kokoro_voice_name
+                from jarvis.voice.tts.kokoro import (
+                    KokoroTTS,
+                    resolve_kokoro_voice_name,
+                )
                 
                 resolved_voice_name = resolve_kokoro_voice_name(getattr(args, 'voice_name', None))
                 
@@ -127,7 +130,7 @@ def main():
                 tts = KokoroTTS(playback, voice_name=resolved_voice_name)
                 
                 if not stt.is_available() or not tts.is_available():
-                    print(f"⚠️  Dependencies missing for faster-whisper/kokoro (pip install faster-whisper kokoro-onnx). Falling back to Vosk.", file=sys.stderr)
+                    print("⚠️  Dependencies missing for faster-whisper/kokoro (pip install faster-whisper kokoro-onnx). Falling back to Vosk.", file=sys.stderr)
                     stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")
                     tts = PiperTTS(playback)
                 else:

@@ -1,7 +1,8 @@
 """Read-only Logs capabilities."""
 import subprocess
 
-def logs_search(service: str = None, grep: str = None, lines: int = 50) -> str:
+
+def logs_search(service: str | None = None, grep: str | None = None, lines: int = 50) -> str:
     """Search system logs using journalctl.
     
     Args:

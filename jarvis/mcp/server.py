@@ -1,12 +1,12 @@
+import json
 import os
 import socket
 import threading
-import json
-from typing import Callable, Dict, Any
-from .protocol import deserialize_request, serialize_response, MCPResponse
+from collections.abc import Callable
+
 
 class MCPServer:
-    def __init__(self, socket_path: str, tool_registry: Dict[str, Callable] = None, policy_engine=None, audit_logger=None):
+    def __init__(self, socket_path: str, tool_registry: dict[str, Callable] | None = None, policy_engine=None, audit_logger=None):
         if not os.path.isabs(socket_path):
             raise ValueError("socket_path must be an absolute path")
         self.socket_path = socket_path
@@ -90,7 +90,7 @@ class MCPServer:
                     self.sock.settimeout(1.0)
                     conn, _ = self.sock.accept()
                     threading.Thread(target=self._handle_client, args=(conn,), daemon=True).start()
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 except Exception:
                     if self.running:
@@ -116,7 +116,7 @@ class MCPServer:
                             response_dict["id"] = request_dict.get("id", "")
                             response_dict["jsonrpc"] = "2.0"
                             conn.sendall((json.dumps(response_dict) + "\n").encode("utf-8"))
-                except Exception as e:
+                except Exception:
                     break
 
     def stop(self):
@@ -133,7 +133,7 @@ class MCPClient:
     def __init__(self, socket_path: str):
         self.socket_path = socket_path
 
-    def call(self, method: str, params: dict = None) -> dict:
+    def call(self, method: str, params: dict | None = None) -> dict:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.connect(self.socket_path)
         req = {"method": method, "params": params or {}, "id": "1"}
@@ -154,5 +154,5 @@ class MCPClient:
         res = self.call("tools/list")
         return res.get("result", {}).get("tools", [])
 
-    def call_tool(self, tool_name: str, arguments: dict = None) -> dict:
+    def call_tool(self, tool_name: str, arguments: dict | None = None) -> dict:
         return self.call("tools/call", {"name": tool_name, "arguments": arguments or {}})

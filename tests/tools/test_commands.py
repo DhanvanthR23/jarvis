@@ -1,8 +1,9 @@
 """Tests for command execution tools."""
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from jarvis.tools import commands
+
 
 class TestCommands(unittest.TestCase):
 

@@ -8,7 +8,6 @@ import unittest
 
 from jarvis.sandbox.launcher import SandboxConfig, build_bwrap_command
 
-
 REQUIRE_BWRAP = unittest.skipUnless(
     shutil.which('bwrap'), 'bwrap not available',
 )

@@ -6,16 +6,16 @@ job is authorized, within bounds, and permitted by capabilities.toml.
 Does NOT replace PolicyEngine — both apply. AutomationPolicy runs first
 (pre-dispatch), then PolicyEngine runs during execution (per-tool).
 """
-from typing import Optional
-from jarvis.automation.models import AutomationJob
+
 from jarvis.automation.authorization import AuthorizationStore, AutomationAuthorization
-from jarvis.policy.engine import PolicyEngine, PolicyDecision
+from jarvis.automation.models import AutomationJob
+from jarvis.policy.engine import PolicyDecision, PolicyEngine
 
 
 class AutomationPolicyResult:
     """Result of automation policy evaluation."""
     def __init__(self, allowed: bool, reason: str,
-                 authorization: Optional[AutomationAuthorization] = None):
+                 authorization: AutomationAuthorization | None = None):
         self.allowed = allowed
         self.reason = reason
         self.authorization = authorization
@@ -33,7 +33,7 @@ class AutomationPolicy:
     """
 
     def __init__(self, auth_store: AuthorizationStore,
-                 policy_engine: Optional[PolicyEngine] = None):
+                 policy_engine: PolicyEngine | None = None):
         self.auth_store = auth_store
         self.policy_engine = policy_engine
 

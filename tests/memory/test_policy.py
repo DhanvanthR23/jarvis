@@ -1,10 +1,12 @@
 import os
 import tempfile
-import unittest
 import time
-from jarvis.memory.store import MemoryStore, MemoryEntry, MemoryCategory
+import unittest
+
 from jarvis.memory.policy import MemoryPolicyEngine, MemoryWriteRequest
-from jarvis.policy.approval import AutoDenyHandler, ApprovalDecision, ApprovalResponse
+from jarvis.memory.store import MemoryCategory, MemoryEntry, MemoryStore
+from jarvis.policy.approval import ApprovalDecision, ApprovalResponse, AutoDenyHandler
+
 
 class MockApprovalHandler:
     def request_approval(self, req):

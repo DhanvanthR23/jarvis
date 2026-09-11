@@ -1,7 +1,9 @@
 """Tests for local Piper TTS."""
 import unittest
-from jarvis.voice.tts.local import PiperTTS
+
 from jarvis.voice.audio import MockAudioPlayback
+from jarvis.voice.tts.local import PiperTTS
+
 
 class TestPiperTTS(unittest.TestCase):
     def setUp(self):

@@ -3,23 +3,23 @@
 Implements sequential turn-taking and bounds concurrency.
 """
 import uuid
-from typing import Dict, Any, Optional
-from jarvis.orchestrator.delegation import DelegationEnvelope
+
 from jarvis.orchestrator.context import ExecutionContext
+from jarvis.orchestrator.delegation import DelegationEnvelope
 from jarvis.output.filter import OutputSecurityFilter
 
 
 class AgentRouter:
     """Manages agent lifecycles, turn-taking, and dispatching."""
     
-    def __init__(self, launcher_callback, output_filter: Optional[OutputSecurityFilter] = None):
+    def __init__(self, launcher_callback, output_filter: OutputSecurityFilter | None = None):
         # launcher_callback(role, envelope) -> agent_output_string
         self.launcher_callback = launcher_callback
         self.output_filter = output_filter or OutputSecurityFilter()
         
         # State tracking
-        self.active_contexts: Dict[str, ExecutionContext] = {}
-        self.current_context: Optional[ExecutionContext] = None
+        self.active_contexts: dict[str, ExecutionContext] = {}
+        self.current_context: ExecutionContext | None = None
         self._concurrency_count = 0
         self._max_concurrency = 2  # Hard limit per plan
 

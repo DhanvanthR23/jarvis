@@ -1,7 +1,9 @@
 """Tests for local Vosk STT."""
 import unittest
-from jarvis.voice.stt.local import VoskSTT
+
 from jarvis.voice.stt.interface import Transcript
+from jarvis.voice.stt.local import VoskSTT
+
 
 class TestVoskSTT(unittest.TestCase):
     def setUp(self):

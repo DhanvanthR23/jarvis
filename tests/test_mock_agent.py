@@ -1,5 +1,7 @@
 import unittest
-from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep, DEFAULT_SCENARIOS
+
+from jarvis.agent.mock import DEFAULT_SCENARIOS, MockAgent, ScriptedScenario, ScriptedStep
+
 
 class TestMockAgent(unittest.TestCase):
     def setUp(self):

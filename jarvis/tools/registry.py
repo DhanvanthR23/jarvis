@@ -1,7 +1,8 @@
 """Tool registration helper."""
 
 from jarvis.core.controller import JarvisController
-from jarvis.tools import system, network, processes, logs, files
+from jarvis.tools import files, logs, network, processes, system
+
 
 def register_readonly_tools(controller: JarvisController):
     """Register all G17 read-only tools on the controller."""

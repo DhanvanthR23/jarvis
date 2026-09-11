@@ -2,14 +2,15 @@
 
 Provides the agent.delegate capability, validating targets and payloads.
 """
-from typing import Any, Dict
+from typing import Any
+
 from jarvis.orchestrator.roles import RoleValidator
 
 
 class DelegationEnvelope:
     """Structured envelope for inter-agent delegation."""
     def __init__(self, target_role: str, task_description: str,
-                 scoped_arguments: Dict[str, Any], timeout_seconds: int = 60):
+                 scoped_arguments: dict[str, Any], timeout_seconds: int = 60):
         self.target_role = target_role
         self.task_description = task_description
         self.scoped_arguments = scoped_arguments
@@ -24,7 +25,7 @@ class DelegationHandler:
         self.router = router
 
     def handle_delegate(self, target_role: str, task_description: str,
-                        scoped_arguments: Dict[str, Any] = None, timeout_seconds: int = 60) -> dict:
+                        scoped_arguments: dict[str, Any] | None = None, timeout_seconds: int = 60) -> dict:
         """Process a delegation request from one agent to another."""
         if not self.role_validator.get_role(target_role):
             return {

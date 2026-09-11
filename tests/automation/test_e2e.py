@@ -5,14 +5,15 @@ Scheduler Tick → Job → Auth Verify → Policy Verify → Controller → Tool
 """
 import time
 import unittest
-from jarvis.automation.models import AutomationJob, TriggerType, ScheduleTrigger
+
 from jarvis.automation.authorization import AuthorizationStore
-from jarvis.automation.scheduler import AutomationScheduler, JobStore, ExecutionStatus
-from jarvis.automation.policy import AutomationPolicy
 from jarvis.automation.executor import AutomationExecutor
-from jarvis.policy.engine import PolicyEngine
-from jarvis.policy.manifest import CapabilityManifest, Capability, RiskTier
+from jarvis.automation.models import AutomationJob, ScheduleTrigger, TriggerType
+from jarvis.automation.policy import AutomationPolicy
+from jarvis.automation.scheduler import AutomationScheduler, ExecutionStatus, JobStore
 from jarvis.core.controller import JarvisController
+from jarvis.policy.engine import PolicyEngine
+from jarvis.policy.manifest import Capability, CapabilityManifest, RiskTier
 
 
 class MockAgent:

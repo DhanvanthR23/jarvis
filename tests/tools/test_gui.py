@@ -1,18 +1,35 @@
 from jarvis.tools.gui_isolated import (
+    desktop_click as isolated_click,
+)
+from jarvis.tools.gui_isolated import (
+    desktop_focus as isolated_focus,
+)
+from jarvis.tools.gui_isolated import (
+    desktop_keypress as isolated_keypress,
+)
+from jarvis.tools.gui_isolated import (
     desktop_screenshot,
     desktop_windows,
-    desktop_focus as isolated_focus,
-    desktop_click as isolated_click,
+)
+from jarvis.tools.gui_isolated import (
     desktop_type as isolated_type,
-    desktop_keypress as isolated_keypress,
+)
+from jarvis.tools.gui_real import (
+    desktop_click as real_click,
+)
+from jarvis.tools.gui_real import (
+    desktop_focus as real_focus,
+)
+from jarvis.tools.gui_real import (
+    desktop_keypress as real_keypress,
 )
 from jarvis.tools.gui_real import (
     desktop_observe,
-    desktop_focus as real_focus,
-    desktop_click as real_click,
-    desktop_type as real_type,
-    desktop_keypress as real_keypress,
 )
+from jarvis.tools.gui_real import (
+    desktop_type as real_type,
+)
+
 
 def test_isolated_gui():
     assert desktop_screenshot() == "Took a screenshot of the isolated desktop"

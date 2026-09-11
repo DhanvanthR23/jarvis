@@ -1,10 +1,10 @@
-from typing import List
+
 
 def desktop_screenshot() -> str:
     """Takes a mock screenshot of the isolated desktop."""
     return "Took a screenshot of the isolated desktop"
 
-def desktop_windows() -> List[str]:
+def desktop_windows() -> list[str]:
     """Lists mock windows in the isolated desktop."""
     return ["Mock Window 1", "Mock Window 2"]
 

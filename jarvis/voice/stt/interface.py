@@ -2,11 +2,10 @@
 
 The controller depends on this interface, never a specific STT engine directly.
 """
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 import hashlib
 import time
-from typing import Optional
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)

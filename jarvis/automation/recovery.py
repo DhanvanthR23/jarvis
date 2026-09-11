@@ -11,11 +11,9 @@ For executions in UNKNOWN state, the default is: do NOT automatically
 replay a potentially non-idempotent mutation.
 """
 from enum import Enum
-from typing import List, Optional
 
-from jarvis.automation.models import AutomationJob
-from jarvis.automation.scheduler import ExecutionRecord, ExecutionStatus, JobStore
 from jarvis.automation.authorization import AuthorizationStore
+from jarvis.automation.scheduler import ExecutionRecord, ExecutionStatus, JobStore
 
 
 class RecoveryAction(Enum):
@@ -41,13 +39,13 @@ class CrashRecovery:
     """
 
     def __init__(self, job_store: JobStore, auth_store: AuthorizationStore,
-                 safe_capabilities: Optional[set] = None):
+                 safe_capabilities: set | None = None):
         self.job_store = job_store
         self.auth_store = auth_store
         # Capabilities known to be safe for automatic retry (read-only)
         self._safe_capabilities = safe_capabilities or set()
 
-    def recover(self, incomplete_records: List[ExecutionRecord]) -> List[RecoveryResult]:
+    def recover(self, incomplete_records: list[ExecutionRecord]) -> list[RecoveryResult]:
         """Evaluate incomplete execution records and decide recovery action.
 
         For each record in STARTED or UNKNOWN state:

@@ -1,21 +1,22 @@
 """Tests for Crash Recovery (G25.9)."""
 import unittest
-from jarvis.automation.models import AutomationJob, TriggerType, ScheduleTrigger
+
 from jarvis.automation.authorization import AuthorizationStore
-from jarvis.automation.scheduler import JobStore, ExecutionRecord, ExecutionStatus
+from jarvis.automation.models import AutomationJob, ScheduleTrigger, TriggerType
 from jarvis.automation.recovery import CrashRecovery, RecoveryAction
+from jarvis.automation.scheduler import ExecutionRecord, ExecutionStatus, JobStore
 
 
 class TestCrashRecovery(unittest.TestCase):
 
     def _make_job(self, capability="network.status", **kwargs):
-        defaults = dict(
-            name="test",
-            capability=capability,
-            arguments={},
-            trigger_type=TriggerType.SCHEDULE,
-            schedule=ScheduleTrigger(interval_seconds=1800),
-        )
+        defaults = {
+            "name": "test",
+            "capability": capability,
+            "arguments": {},
+            "trigger_type": TriggerType.SCHEDULE,
+            "schedule": ScheduleTrigger(interval_seconds=1800),
+        }
         defaults.update(kwargs)
         return AutomationJob(**defaults)
 

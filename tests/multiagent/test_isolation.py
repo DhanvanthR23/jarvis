@@ -1,12 +1,16 @@
 """Sandbox isolation and timeout tests for Multi-Agent (G26)."""
 import unittest
-import time
-from unittest.mock import MagicMock
-from jarvis.sandbox.launcher import launch_sandboxed, SandboxConfig, SandboxError
+
+import pytest
+
+from jarvis.sandbox.launcher import SandboxConfig, SandboxError, launch_sandboxed
+from tests.sandbox.helpers import REQUIRE_BWRAP
 
 
 class TestMultiAgentIsolation(unittest.TestCase):
 
+    @pytest.mark.integration
+    @REQUIRE_BWRAP
     def test_subagent_timeout_kills_sandbox_fail_closed(self):
         # Using a tiny timeout to ensure it fails
         config = SandboxConfig(workspace_dir="/tmp", socket_path="/tmp/mock.sock")
