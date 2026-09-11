@@ -87,14 +87,10 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     bwrap_cmd += ['--ro-bind', '/usr', '/usr']
 
     # Handle /bin, /lib, /lib64, /sbin — may be real dirs or symlinks
-    for path, symlink_target in [
-        ('/bin', 'usr/bin'),
-        ('/lib', 'usr/lib'),
-        ('/lib64', 'usr/lib'),
-        ('/sbin', 'usr/bin'),
-    ]:
+    for path in ['/bin', '/lib', '/lib64', '/sbin']:
         if os.path.islink(path):
-            bwrap_cmd += ['--symlink', symlink_target, path]
+            target = os.readlink(path)
+            bwrap_cmd += ['--symlink', target, path]
         elif os.path.isdir(path):
             bwrap_cmd += ['--ro-bind', path, path]
         # If path doesn't exist, skip it

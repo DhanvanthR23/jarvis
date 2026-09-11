@@ -38,9 +38,9 @@ def _run_bwrap_test(args: list[str], description: str) -> CheckResult:
     # non-merged /usr systems.
     fs_args = ['--ro-bind', '/usr', '/usr']
 
-    for path, target in [('/bin', 'usr/bin'), ('/lib', 'usr/lib'),
-                         ('/lib64', 'usr/lib'), ('/sbin', 'usr/bin')]:
+    for path in ['/bin', '/lib', '/lib64', '/sbin']:
         if os.path.islink(path):
+            target = os.readlink(path)
             fs_args += ['--symlink', target, path]
         elif os.path.isdir(path):
             fs_args += ['--ro-bind', path, path]
