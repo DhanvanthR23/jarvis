@@ -21,11 +21,11 @@ class TestMCPServer(unittest.TestCase):
         
     def test_call_tool(self):
         self.server.register_tool("add", lambda a, b: a + b)
-        res = self.server._handle_request({"method": "tools/call", "params": {"name": "add", "args": {"a": 2, "b": 3}}, "id": "1"})
-        self.assertEqual(res["result"], 5)
+        res = self.server._handle_request({"method": "tools/call", "params": {"name": "add", "arguments": {"a": 2, "b": 3}}, "id": "1"})
+        self.assertEqual(res["result"]["content"][0]["text"], "5")
         
     def test_unknown_tool(self):
-        res = self.server._handle_request({"method": "tools/call", "params": {"name": "not_exist", "args": {}}, "id": "1"})
+        res = self.server._handle_request({"method": "tools/call", "params": {"name": "not_exist", "arguments": {}}, "id": "1"})
         self.assertIn("error", res)
         
     def test_client_server_integration(self):
@@ -35,5 +35,5 @@ class TestMCPServer(unittest.TestCase):
         client = MCPClient(self.sock_path)
         tools = client.list_tools()
         self.assertEqual(tools[0]["name"], "hello")
-        res = client.call_tool("hello", {"name": "World"})
-        self.assertEqual(res["result"], "Hello World")
+        res = client.call_tool("hello", arguments={"name": "World"})
+        self.assertEqual(res["result"]["content"][0]["text"], "Hello World")

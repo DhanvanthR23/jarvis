@@ -55,10 +55,16 @@ class AuditDatabase:
         return latest["chain_hash"] if latest else None
 
     def verify_chain(self) -> bool:
-        cur = self.conn.execute("SELECT chain_hash, event_id FROM audit_log ORDER BY timestamp ASC")
+        cur = self.conn.execute("SELECT timestamp, session_id, agent, tool, arguments_hash, policy_decision, approval_decision, result_summary, chain_hash FROM audit_log ORDER BY timestamp ASC")
         rows = cur.fetchall()
-        # Full chain verification logic would be here, but we will mock it slightly for simplicity
-        # True chain verify happens using AuditChain
+        from .chain import compute_event_hash
+        curr = ""
+        for row in rows:
+            timestamp, session_id, agent, tool, args_hash, policy_dec, approval_dec, result_summary, expected_hash = row
+            event_data = f"{timestamp}|{session_id}|{agent}|{tool}|{args_hash}|{policy_dec}|{approval_dec}|{result_summary}"
+            curr = compute_event_hash(event_data, curr)
+            if curr != expected_hash:
+                return False
         return True
 
     def close(self):

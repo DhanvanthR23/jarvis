@@ -20,7 +20,13 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
     if backend_name == "agy":
         try:
             os.makedirs("/tmp/jarvis_workspace", exist_ok=True)
-            agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace")
+            creds_paths = []
+            if "JARVIS_AGY_CREDS" in os.environ:
+                for pair in os.environ["JARVIS_AGY_CREDS"].split(","):
+                    if ":" in pair:
+                        host, guest = pair.split(":", 1)
+                        creds_paths.append((host, guest))
+            agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace", creds_paths=creds_paths)
         except Exception as e:
             print(f"Warning: AGYBackend failed to initialize: {e}. Falling back to MockAgent.", file=sys.stderr)
             backend_name = "mock"
@@ -31,19 +37,32 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
     # Setup Policy
     policy_engine = None
     manifest_path = "jarvis/policy/capabilities.toml"
-    if os.path.exists(manifest_path):
-        from jarvis.policy.manifest import CapabilityManifest
-        manifest = CapabilityManifest(manifest_path)
-        manifest.load()
+    hash_path = "jarvis/policy/capabilities.hash"
+    if os.path.exists(manifest_path) and os.path.exists(hash_path):
+        from jarvis.policy.manifest import load_manifest
+        with open(hash_path, 'r') as f:
+            trusted_hash = f.read().strip()
+        manifest = load_manifest(manifest_path, trusted_hash)
         policy_engine = PolicyEngine(manifest)
         
     approval_handler = CLIApprovalHandler()
+    audit_logger = AuditLogger(db_path="audit.db", anchor_path="anchor.log")
+    
+    from jarvis.voice.session import VoiceSession
+    voice_session = VoiceSession()
 
-    return JarvisController(
+    controller = JarvisController(
         agent_backend=agent,
         policy_engine=policy_engine,
         approval_handler=approval_handler,
+        audit_logger=audit_logger,
+        voice_session=voice_session,
     )
+    
+    from jarvis.tools.registry import register_readonly_tools
+    register_readonly_tools(controller)
+    
+    return controller
 
 def main():
     parser = argparse.ArgumentParser(description="Jarvis CLI Entrypoint")
@@ -116,7 +135,7 @@ def main():
                 if transcript.text:
                     print(f"\n🗣️  You said: {transcript.text}")
                     print("⚙️  Jarvis is thinking...")
-                    response = controller.process_request(transcript.text, is_voice=True)
+                    response = controller.process_request(transcript.text, is_voice=True, transcript=transcript)
                     import re
                     clean_text = re.sub(r'[*_#`|~\[\]>]', '', response)
                     clean_text = re.sub(r'\n+', ' ', clean_text).strip()

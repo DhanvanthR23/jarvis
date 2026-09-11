@@ -40,7 +40,7 @@ class TestVoiceE2EMutation(unittest.TestCase):
         manifest = CapabilityManifest('dummy')
         manifest._capabilities = {'restart_service': Capability('restart_service', RiskTier.APPROVAL)}
         manifest._loaded = True
-        policy = PolicyEngine(manifest)
+        policy = PolicyEngine(manifest, active_role=None)
 
         # 2. Setup Agent
         # MockAgent will just return whatever format we give it.
@@ -90,7 +90,7 @@ class TestVoiceE2EMutation(unittest.TestCase):
         runtime = VoiceRuntime(cap, pb, stt, tts)
         
         def on_transcription(transcript):
-            response = ctrl.process_voice_request(transcript)
+            response = ctrl.process_request(transcript.text, is_voice=True, transcript=transcript)
             runtime.speak(response)
             
         runtime.on_transcription = on_transcription

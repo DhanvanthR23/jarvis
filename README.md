@@ -7,7 +7,7 @@ Jarvis is a secure, multi-agent orchestration architecture designed to run untru
 ## Core Features
 
 - **Multi-Agent Orchestration (G26)**: Hub-and-spoke architecture where specialized agents (e.g., orchestrator, system diagnostics, system maintenance, browser research) run in completely isolated sandboxes with zero direct agent-to-agent IPC.
-- **Strict Sandboxing**: Utilizes `bwrap` (Bubblewrap) to enforce strong isolation. Agents have no host credentials, no IP networking, and minimal read-only filesystems.
+- **Strict Sandboxing**: Utilizes `bwrap` (Bubblewrap) to enforce strong isolation. Agents have no host credentials, controlled network access required for AGY, and minimal read-only filesystems.
 - **Policy Engine**: Role-based access control (RBAC) enforced by a verified `capabilities.toml` manifest. Tools are gated by risk tiers (`safe`, `approval`, `disabled`).
 - **Audit Logging & Tracing**: Distributed execution tracing (trace, span, parent span) backed by an immutable SQLite audit log and external anchor.
 - **Output Security Filter**: Scans all inter-agent messages and user-facing output for secrets (e.g., AWS keys, GitHub tokens) to prevent leaks.

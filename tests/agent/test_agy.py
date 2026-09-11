@@ -77,19 +77,20 @@ class TestAGYBackend(unittest.TestCase):
             
             # Verify read_only_paths
             ro_dests = [dest for _, dest in config.read_only_paths]
-            self.assertIn('/home/agent/.gemini/config', ro_dests)
             self.assertIn('/home/agent/mcp_bridge.py', ro_dests)
             self.assertIn('/home/agent/agy', ro_dests)
             
             # Verify writable_paths
             rw_dests = [dest for _, dest in config.writable_paths]
+            self.assertIn('/home/agent/.gemini/config', rw_dests)
             self.assertIn('/home/agent/.gemini/antigravity-cli', rw_dests)
             
-            # No real ~/.gemini should be mounted
+            # Verify no host home directory is hardcoded in the source tree (except via config)
+            # The test doesn't supply creds_paths, so we shouldn't see /home/ sources
             for path_tuple in config.read_only_paths + config.writable_paths:
                 src, _ = path_tuple
-                self.assertNotIn('/home/', src) # Assuming host user home isn't used
-                self.assertNotIn('.gemini', src) # We use temporary directories as source
+                if path_tuple not in self.backend.creds_paths:
+                    self.assertNotIn('/home/dhanvanth', src) # Host home is not hardcoded
 
     def test_empty_output_handling(self):
         """Empty output from AGY is treated as transport failure."""

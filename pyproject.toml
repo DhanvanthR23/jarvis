@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jarvis"
+version = "0.1.0"
+description = "A secure, multi-agent orchestration architecture"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+voice = [
+    "pyaudio",
+    "vosk",
+    "piper-tts"
+]
+voice-hq = [
+    "faster-whisper",
+    "kokoro-onnx",
+    "soundfile",
+    "numpy"
+]
+dev = [
+    "pytest",
+    "ruff",
+    "mypy"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = false

@@ -32,7 +32,7 @@ class TestVoiceE2EReadOnly(unittest.TestCase):
         manifest = CapabilityManifest('dummy')
         manifest._capabilities = {'get_time': Capability('get_time', RiskTier.SAFE)}
         manifest._loaded = True
-        policy = PolicyEngine(manifest)
+        policy = PolicyEngine(manifest, active_role=None)
 
         # 2. Setup Agent
         scenario = ScriptedScenario(
@@ -66,7 +66,7 @@ class TestVoiceE2EReadOnly(unittest.TestCase):
         
         # Connect VoiceRuntime -> Controller -> VoiceRuntime
         def on_transcription(transcript):
-            response = ctrl.process_voice_request(transcript)
+            response = ctrl.process_request(transcript.text, is_voice=True, transcript=transcript)
             runtime.speak(response)
             
         runtime.on_transcription = on_transcription

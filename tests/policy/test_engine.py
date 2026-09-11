@@ -11,7 +11,7 @@ class TestPolicyEngine(unittest.TestCase):
             f.write("""[meta]\nversion = "1.0"\n[capabilities]\ntest_safe = "safe"\ntest_approve = "approval"\ntest_disabled = "disabled"\n""")
         self.man = CapabilityManifest(self.path)
         self.man.load()
-        self.engine = PolicyEngine(self.man)
+        self.engine = PolicyEngine(self.man, active_role=None)
         
     def tearDown(self):
         os.remove(self.path)

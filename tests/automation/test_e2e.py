@@ -35,7 +35,7 @@ class TestAutomationE2E(unittest.TestCase):
             "network.status": Capability("network.status", RiskTier.SAFE)
         }
         manifest._loaded = True
-        policy_engine = PolicyEngine(manifest)
+        policy_engine = PolicyEngine(manifest, active_role=None)
 
         # 2. Setup controller with mocked tool registry
         tool_registry = {
@@ -109,7 +109,7 @@ class TestAutomationE2E(unittest.TestCase):
             "arbitrary_shell": Capability("arbitrary_shell", RiskTier.DISABLED)
         }
         manifest._loaded = True
-        policy_engine = PolicyEngine(manifest)
+        policy_engine = PolicyEngine(manifest, active_role=None)
 
         controller = JarvisController(
             agent_backend=MockAgent(),

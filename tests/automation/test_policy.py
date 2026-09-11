@@ -27,7 +27,7 @@ class TestAutomationPolicy(unittest.TestCase):
             name: Capability(name, tier) for name, tier in caps_dict.items()
         }
         manifest._loaded = True
-        return PolicyEngine(manifest)
+        return PolicyEngine(manifest, active_role=None)
 
     def test_authorized_safe_job_allowed(self):
         auth_store = AuthorizationStore()

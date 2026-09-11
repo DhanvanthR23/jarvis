@@ -76,7 +76,7 @@ INV_E = _register(SecurityInvariant(
     name="mcp_unix_socket",
     description=(
         "MCP is accessed through a Unix domain socket. "
-        "No localhost TCP dependency. No IP networking for AGY."
+        "No localhost TCP dependency. controlled network access required for AGY."
     ),
     violation_response=ViolationResponse.FAIL_CLOSED,
 ))

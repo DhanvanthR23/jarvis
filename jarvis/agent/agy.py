@@ -37,8 +37,9 @@ sock.close()
 class AGYBackend(AgentBackend):
     """Integrates the AGY CLI within the Jarvis sandbox."""
 
-    def __init__(self, workspace_dir: str):
+    def __init__(self, workspace_dir: str, creds_paths: list = None):
         self.workspace_dir = workspace_dir
+        self.creds_paths = creds_paths or []
         # Locate AGY binary once on initialization
         self.agy_path = shutil.which('agy')
         if not self.agy_path:
@@ -106,19 +107,21 @@ class AGYBackend(AgentBackend):
         mcp_server.start()
         
         try:
+            ro_paths = [
+                (os.path.join(session_dir, 'mcp_bridge.py'), '/home/agent/mcp_bridge.py'),
+                (self.agy_path, '/home/agent/agy'),
+                ('/etc/hosts', '/etc/hosts'),
+                ('/etc/resolv.conf', '/etc/resolv.conf'),
+                ('/etc/ssl/certs', '/etc/ssl/certs'),
+                ('/etc/ca-certificates', '/etc/ca-certificates')
+            ]
+            for host_path, guest_path in self.creds_paths:
+                ro_paths.append((host_path, guest_path))
+
             config = SandboxConfig(
                 workspace_dir=self.workspace_dir,
                 socket_path=socket_path,
-                read_only_paths=[
-                    (os.path.join(session_dir, 'mcp_bridge.py'), '/home/agent/mcp_bridge.py'),
-                    (self.agy_path, '/home/agent/agy'),
-                    ('/etc/hosts', '/etc/hosts'),
-                    ('/etc/resolv.conf', '/etc/resolv.conf'),
-                    ('/etc/ssl/certs', '/etc/ssl/certs'),
-                    ('/etc/ca-certificates', '/etc/ca-certificates'),
-                    ('/home/dhanvanth/.gemini/oauth_creds.json', '/home/agent/.gemini/oauth_creds.json'),
-                    ('/home/dhanvanth/.gemini/google_accounts.json', '/home/agent/.gemini/google_accounts.json')
-                ],
+                read_only_paths=ro_paths,
                 writable_paths=[
                     (os.path.join(session_dir, 'config'), '/home/agent/.gemini/config'),
                     (os.path.join(session_dir, 'antigravity-cli'), '/home/agent/.gemini/antigravity-cli')
@@ -149,5 +152,4 @@ class AGYBackend(AgentBackend):
         finally:
             mcp_server.stop()
             # Absolute cleanup of the session directory
-            # shutil.rmtree(session_dir, ignore_errors=True)
-            print(f"DEBUG: session_dir kept at {session_dir}")
+            shutil.rmtree(session_dir, ignore_errors=True)

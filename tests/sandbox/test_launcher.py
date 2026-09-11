@@ -51,9 +51,9 @@ class TestBuildBwrapCommand(unittest.TestCase):
         self.fail('Workspace bind mount not found')
 
     def test_socket_bind_mount(self):
-        # Find --ro-bind socket_path /run/jarvis/mcp.sock
+        # Find --bind socket_path /run/jarvis/mcp.sock
         for i, arg in enumerate(self.cmd):
-            if arg == '--ro-bind' and i + 2 < len(self.cmd):
+            if arg == '--bind' and i + 2 < len(self.cmd):
                 if self.cmd[i + 1] == '/tmp/test.sock':
                     self.assertEqual(self.cmd[i + 2], '/run/jarvis/mcp.sock')
                     return

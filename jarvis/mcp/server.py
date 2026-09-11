@@ -154,5 +154,5 @@ class MCPClient:
         res = self.call("tools/list")
         return res.get("result", {}).get("tools", [])
 
-    def call_tool(self, tool_name: str, args: dict = None) -> dict:
-        return self.call("tools/call", {"name": tool_name, "args": args or {}})
+    def call_tool(self, tool_name: str, arguments: dict = None) -> dict:
+        return self.call("tools/call", {"name": tool_name, "arguments": arguments or {}})

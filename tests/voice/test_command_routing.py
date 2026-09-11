@@ -19,11 +19,11 @@ class TestVoiceControllerIntegration(unittest.TestCase):
             output_filter=self.output_filter
         )
 
-    def test_process_voice_request_filters_output(self):
+    def test_process_request_filters_output(self):
         # If AGY returns a secret in freeform text, it should be blocked.
         transcript = Transcript(text="What is the key?", confidence=0.95)
         
-        response = self.controller.process_voice_request(transcript)
+        response = self.controller.process_request(transcript.text, is_voice=True, transcript=transcript)
         
         # Should be replaced by the output filter
         self.assertEqual(response, SAFE_REPLACEMENT)
@@ -47,7 +47,7 @@ class TestVoiceControllerIntegration(unittest.TestCase):
         manifest = CapabilityManifest('dummy')
         manifest._capabilities = {'command_execute': Capability('command_execute', RiskTier.DISABLED)}
         manifest._loaded = True
-        self.controller.policy_engine = PolicyEngine(manifest)
+        self.controller.policy_engine = PolicyEngine(manifest, active_role=None)
         
         # AGY tries to execute the tool
         scenario = ScriptedScenario(
@@ -58,7 +58,7 @@ class TestVoiceControllerIntegration(unittest.TestCase):
         self.controller.agent_backend = MockAgent([scenario])
         
         transcript = Transcript(text="run a command", confidence=0.99)
-        self.controller.process_voice_request(transcript)
+        self.controller.process_request(transcript.text, is_voice=True, transcript=transcript)
         
         # Check that the policy check event was logged and the agent response reflects the denial
         policy_checks = [e for e in self.controller.session.events if e.type == EventType.POLICY_CHECK]
