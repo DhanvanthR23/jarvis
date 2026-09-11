@@ -55,7 +55,14 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
         policy_engine = PolicyEngine(manifest)
         
     approval_handler = CLIApprovalHandler()
-    audit_logger = AuditLogger(db_path="/var/log/jarvis/audit.db", anchor_path="/var/log/jarvis/anchor.log")
+    if os.path.isdir("/var/log/jarvis") and os.access("/var/log/jarvis", os.W_OK):
+        audit_db = "/var/log/jarvis/audit.db"
+        audit_anchor = "/var/log/jarvis/anchor.log"
+    else:
+        audit_db = "audit.db"
+        audit_anchor = "anchor.log"
+        
+    audit_logger = AuditLogger(db_path=audit_db, anchor_path=audit_anchor)
     
     from jarvis.voice.session import VoiceSession
     voice_session = VoiceSession()
