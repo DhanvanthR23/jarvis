@@ -114,16 +114,6 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     bwrap_cmd += ['--dir', '/run/jarvis']
     bwrap_cmd += ['--bind', config.socket_path, '/run/jarvis/mcp.sock']
 
-    # Additional read-only paths
-    for item in config.read_only_paths:
-        if isinstance(item, tuple) and len(item) == 2:
-            src, dst = item
-            if os.path.exists(src):
-                bwrap_cmd += ['--ro-bind', src, dst]
-        elif isinstance(item, str):
-            if os.path.exists(item):
-                bwrap_cmd += ['--ro-bind', item, item]
-
     # Additional writable paths
     for item in config.writable_paths:
         if isinstance(item, tuple) and len(item) == 2:
@@ -133,6 +123,16 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
         elif isinstance(item, str):
             if os.path.exists(item):
                 bwrap_cmd += ['--bind', item, item]
+
+    # Additional read-only paths (done after writable to allow RO files inside RW directories)
+    for item in config.read_only_paths:
+        if isinstance(item, tuple) and len(item) == 2:
+            src, dst = item
+            if os.path.exists(src):
+                bwrap_cmd += ['--ro-bind', src, dst]
+        elif isinstance(item, str):
+            if os.path.exists(item):
+                bwrap_cmd += ['--ro-bind', item, item]
 
     # Clear all environment variables and set only controlled ones
     bwrap_cmd += ['--clearenv']
