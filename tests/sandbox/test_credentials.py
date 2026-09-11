@@ -4,10 +4,12 @@ Verifies that no host credentials leak into the sandbox environment.
 """
 
 import unittest
+import pytest
 
 from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
 
 
+@pytest.mark.integration
 @REQUIRE_BWRAP
 class TestCredentialIsolation(unittest.TestCase):
 

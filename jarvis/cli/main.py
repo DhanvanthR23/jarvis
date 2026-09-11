@@ -22,10 +22,19 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
             os.makedirs("/tmp/jarvis_workspace", exist_ok=True)
             creds_paths = []
             if "JARVIS_AGY_CREDS" in os.environ:
+                if not os.environ["JARVIS_AGY_CREDS"].strip():
+                    raise ValueError("JARVIS_AGY_CREDS is empty")
                 for pair in os.environ["JARVIS_AGY_CREDS"].split(","):
-                    if ":" in pair:
-                        host, guest = pair.split(":", 1)
-                        creds_paths.append((host, guest))
+                    if ":" not in pair:
+                        raise ValueError(f"Malformed credential pair (missing colon): {pair}")
+                    host, guest = pair.split(":", 1)
+                    if not os.path.isabs(host):
+                        raise ValueError(f"Host path must be absolute: {host}")
+                    if not os.path.exists(host):
+                        raise ValueError(f"Host credential path does not exist: {host}")
+                    if not guest.startswith("/home/agent/.gemini/"):
+                        raise ValueError(f"Guest path must be within /home/agent/.gemini/: {guest}")
+                    creds_paths.append((host, guest))
             agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace", creds_paths=creds_paths)
         except Exception as e:
             print(f"Warning: AGYBackend failed to initialize: {e}. Falling back to MockAgent.", file=sys.stderr)
@@ -46,7 +55,7 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
         policy_engine = PolicyEngine(manifest)
         
     approval_handler = CLIApprovalHandler()
-    audit_logger = AuditLogger(db_path="audit.db", anchor_path="anchor.log")
+    audit_logger = AuditLogger(db_path="/var/log/jarvis/audit.db", anchor_path="/var/log/jarvis/anchor.log")
     
     from jarvis.voice.session import VoiceSession
     voice_session = VoiceSession()

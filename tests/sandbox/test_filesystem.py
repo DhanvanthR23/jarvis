@@ -8,10 +8,12 @@ import os
 import shutil
 import tempfile
 import unittest
+import pytest
 
 from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
 
 
+@pytest.mark.integration
 @REQUIRE_BWRAP
 class TestFilesystemIsolation(unittest.TestCase):
 

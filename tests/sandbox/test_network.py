@@ -4,10 +4,12 @@ Verifies that the sandbox has controlled network access required for AGY. and th
 """
 
 import unittest
+import pytest
 
 from tests.sandbox.helpers import run_in_sandbox, REQUIRE_BWRAP
 
 
+@pytest.mark.integration
 @REQUIRE_BWRAP
 class TestNetworkIsolation(unittest.TestCase):
 

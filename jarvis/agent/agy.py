@@ -77,10 +77,7 @@ class AGYBackend(AgentBackend):
                 "enableTelemetry": False
             }, f)
 
-        # Also copy antigravity-oauth-token to the cli_dir so it can authenticate
-        src_token = os.path.expanduser('~/.gemini/antigravity-cli/antigravity-oauth-token')
-        if os.path.exists(src_token):
-            shutil.copy(src_token, os.path.join(cli_dir, 'antigravity-oauth-token'))
+
 
         # 3. Trusted Bridge Script (will be RO in sandbox)
         bridge_path = os.path.join(session_dir, 'mcp_bridge.py')
