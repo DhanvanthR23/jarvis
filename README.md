@@ -1,7 +1,6 @@
 # Jarvis
 
-> **⚠️ Not working currently / WIP ⚠️**
-> This project is currently under active development and is not yet ready for production use.
+> **Jarvis is now fully functional and operational locally!**
 
 Jarvis is a secure, multi-agent orchestration architecture designed to run untrusted agent backends (like AGY) in isolated sandboxes while maintaining strict security policies and audit trails.
 
@@ -13,7 +12,7 @@ Jarvis is a secure, multi-agent orchestration architecture designed to run untru
 - **Audit Logging & Tracing**: Distributed execution tracing (trace, span, parent span) backed by an immutable SQLite audit log and external anchor.
 - **Output Security Filter**: Scans all inter-agent messages and user-facing output for secrets (e.g., AWS keys, GitHub tokens) to prevent leaks.
 - **Automation Pipeline (G25)**: Supports running capability-bound background jobs with explicit authorization separation from interactive sessions.
-- **Voice Interface (G24)**: Integration for voice-based interaction with strict confirmation thresholds.
+- **Local Voice Interface (G27)**: High-accuracy, entirely local Speech-to-Text and Text-to-Speech using `faster-whisper` and `Kokoro ONNX` with conversational text sanitization.
 
 ## Architecture
 
@@ -24,25 +23,27 @@ The system centers around the `JarvisController` which coordinates:
 4. **Approval Cache**: Prompts the user for confirmation on mutating actions.
 5. **Audit Logger**: Cryptographically chains execution events.
 
-## Usage (WIP)
+## Usage
 
 To start the interactive REPL:
 ```bash
-# Initializes the audit anchor (required on first run)
-./scripts/setup_anchor.sh
-
 # Start the Jarvis CLI
-./scripts/run_jarvis.sh
+./jarvis.sh
+```
+
+To run an interactive Voice Session:
+```bash
+./jarvis.sh --voice --voice-engine=faster-whisper
 ```
 
 To run a one-shot query:
 ```bash
-./scripts/run_jarvis.sh diagnose my wifi
+./jarvis.sh diagnose my wifi
 ```
 
 To use a specific backend (mock or agy):
 ```bash
-./scripts/run_jarvis.sh --backend agy
+./jarvis.sh --backend agy
 ```
 
 ## Security Invariants

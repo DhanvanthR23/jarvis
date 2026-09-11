@@ -9,5 +9,4 @@ using ``pytest.skip``.  This keeps the non‑sandbox tests runnable and makes
 clear why these tests are not executed.
 """
 
-import unittest
-raise unittest.SkipTest("Skipping sandbox tests – bwrap/unix socket not available")
+

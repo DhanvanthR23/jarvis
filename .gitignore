@@ -26,3 +26,9 @@ anchor.log
 # Virtual environments
 venv/
 .venv/
+
+# Local AI Models and Weights
+*.onnx
+*.bin
+*.json
+!jarvis_handoff.json

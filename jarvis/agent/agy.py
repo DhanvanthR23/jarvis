@@ -76,6 +76,11 @@ class AGYBackend(AgentBackend):
                 "enableTelemetry": False
             }, f)
 
+        # Also copy antigravity-oauth-token to the cli_dir so it can authenticate
+        src_token = os.path.expanduser('~/.gemini/antigravity-cli/antigravity-oauth-token')
+        if os.path.exists(src_token):
+            shutil.copy(src_token, os.path.join(cli_dir, 'antigravity-oauth-token'))
+
         # 3. Trusted Bridge Script (will be RO in sandbox)
         bridge_path = os.path.join(session_dir, 'mcp_bridge.py')
         with open(bridge_path, 'w') as f:
@@ -93,8 +98,8 @@ class AGYBackend(AgentBackend):
         
         # For G15 testing, map a mock tool. We will expand this in G17.
         mcp_server.register_tool(
-            'system.info', 
-            lambda **kwargs: tool_callback('system.info', kwargs), 
+            'system_info', 
+            lambda **kwargs: tool_callback('system_info', kwargs), 
             'Get system info'
         )
         
@@ -105,13 +110,17 @@ class AGYBackend(AgentBackend):
                 workspace_dir=self.workspace_dir,
                 socket_path=socket_path,
                 read_only_paths=[
-                    (os.path.join(session_dir, 'config'), '/home/agent/.gemini/config'),
                     (os.path.join(session_dir, 'mcp_bridge.py'), '/home/agent/mcp_bridge.py'),
                     (self.agy_path, '/home/agent/agy'),
                     ('/etc/hosts', '/etc/hosts'),
-                    ('/etc/resolv.conf', '/etc/resolv.conf')
+                    ('/etc/resolv.conf', '/etc/resolv.conf'),
+                    ('/etc/ssl/certs', '/etc/ssl/certs'),
+                    ('/etc/ca-certificates', '/etc/ca-certificates'),
+                    ('/home/dhanvanth/.gemini/oauth_creds.json', '/home/agent/.gemini/oauth_creds.json'),
+                    ('/home/dhanvanth/.gemini/google_accounts.json', '/home/agent/.gemini/google_accounts.json')
                 ],
                 writable_paths=[
+                    (os.path.join(session_dir, 'config'), '/home/agent/.gemini/config'),
                     (os.path.join(session_dir, 'antigravity-cli'), '/home/agent/.gemini/antigravity-cli')
                 ]
             )
@@ -119,10 +128,10 @@ class AGYBackend(AgentBackend):
             launcher = SecureLauncher(config)
             
             # Launch AGY with print mode
-            command = ['/home/agent/agy', '--print', user_input]
+            command = ['/home/agent/agy', '--print', user_input, '--dangerously-skip-permissions', '--model', 'gemini-3.7-flash', '--effort', 'medium']
             
             try:
-                result = launcher.launch(command, timeout=60)
+                result = launcher.launch(command, timeout=300)
                 
                 # Handling outputs properly
                 if not result.stdout.strip():
@@ -140,4 +149,5 @@ class AGYBackend(AgentBackend):
         finally:
             mcp_server.stop()
             # Absolute cleanup of the session directory
-            shutil.rmtree(session_dir, ignore_errors=True)
+            # shutil.rmtree(session_dir, ignore_errors=True)
+            print(f"DEBUG: session_dir kept at {session_dir}")

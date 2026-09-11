@@ -59,9 +59,14 @@ class VoiceRuntime:
 
     def speak(self, text: str) -> None:
         """Transition to SPEAKING and synthesize text."""
+        # Strip markdown syntax that confuses TTS (asterisks, hashes, backticks, table bars)
+        import re
+        clean_text = re.sub(r'[*_#`|~\[\]>]', '', text)
+        clean_text = re.sub(r'\n+', ' ', clean_text).strip()
+        
         # We can enter SPEAKING from PROCESSING, EXECUTING, or WAITING_APPROVAL
         self.state_machine.transition(VoiceState.SPEAKING)
-        self.tts.speak(text)
+        self.tts.speak(clean_text)
         # Assuming synchronous speak for MVP, transition back to IDLE
         self.state_machine.transition(VoiceState.IDLE)
 

@@ -54,28 +54,66 @@ class JarvisController:
             'description': description,
         }
 
-    def process_request(self, user_input: str) -> str:
-        """Process a user request through the full pipeline.
-
-        1. Create request event
-        2. Send to agent with tool callback
-        3. Tool callback enforces: Policy → Approval → Execute → Audit
-        4. Return agent's final response
-        """
-        # 1. Record request event
-        req_event = Event(
+    def process_request(self, user_input: str, is_voice: bool = False) -> str:
+        """Process a user request through the pipeline."""
+        self.session.add_event(Event(
             type=EventType.REQUEST,
             session_id=self.session.session_id,
-            data={'user_input': user_input},
-        )
-        self.session.add_event(req_event)
+            data={'text': user_input},
+        ))
 
-        # 2. Define the tool callback
+        # Check for Voice Approval Command (invariant O - explicit voice confirmation)
+        if "yes jarvis, confirm" in user_input.lower():
+            # Find pending approval in cache
+            if self.approval_handler:
+                import time
+                from jarvis.policy.approval import ApprovalDecision, ApprovalResponse
+                
+                # We need to find the latest unexpired pending request in our session
+                # In a real app we'd have a queue, but here we just approve the active one.
+                # Since this is MVP, we assume there is one pending request in cache.
+                req = self.approval_cache.get_last_pending()
+                if req:
+                    approval = self.approval_cache._cache.get(req.request_id)
+                    approval = approval._replace(
+                        decision=ApprovalDecision.ALLOW_SESSION,
+                        responded_at=time.time(),
+                        responded_by="voice_system",
+                        risk='approval'
+                    )
+                    resp = ApprovalResponse(
+                        request_id=req.request_id,
+                        decision=ApprovalDecision.ALLOW_SESSION,
+                        responded_at=time.time(),
+                        responded_by="voice_system",
+                        expires_at=approval.expires_at
+                    )
+                    self.approval_cache.add_approval(req, resp)
+                    
+                    response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a))
+                    return self.output_filter.filter(response)
+
         def tool_callback(tool_name: str, args: dict) -> dict:
             return self._execute_tool(tool_name, args)
 
-        # 3. Send to agent backend
-        response = self.agent_backend.process(user_input, tool_callback)
+        # Apply voice constraints
+        if is_voice:
+            prompt = (
+                "<VOICE_MODE_ON>\n"
+                "CRITICAL SYSTEM OVERRIDE: You are an AI assistant communicating EXCLUSIVELY over an audio Voice Interface. "
+                "YOUR ENTIRE RESPONSE WILL BE READ ALOUD BY A TEXT-TO-SPEECH ENGINE.\n\n"
+                "VOICE CONSTRAINTS (MUST OBEY):\n"
+                "1. NO MARKDOWN: Never use tables, bolding (**), italics, hashes (#), or bullet points.\n"
+                "2. NO TECHNICAL JARGON: Never output raw JSON, code blocks, IP addresses, or terminal commands.\n"
+                "3. CONVERSATIONAL SUMMARY: If a tool returns complex data (like network diagnostics), you MUST summarize it into 1 or 2 short, naturally spoken sentences. For example, 'Your Wi-Fi is connected and working perfectly' instead of listing the gateway IP.\n"
+                "4. If you output a markdown table or a list, the text-to-speech engine will crash and you will fail your core directive.\n"
+                "</VOICE_MODE_ON>\n\n"
+                f"User said: {user_input}"
+            )
+        else:
+            prompt = user_input
+
+        response = self.agent_backend.process(prompt, tool_callback)
 
         # 4. Record response event
         resp_event = Event(

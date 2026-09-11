@@ -1,0 +1,546 @@
+{
+  "document_type": "jarvis_project_handoff",
+  "schema_version": "1.0",
+  "generated_date": "2026-09-08",
+  "purpose": "Allow a future AI instance to resume the Jarvis project with minimal context loss and without reopening already-settled architectural decisions.",
+  "project": {
+    "name": "Jarvis",
+    "description": "A security-first local Linux AI assistant where Jarvis is the trusted controller/security layer and Google Antigravity CLI (AGY) is an untrusted reasoning backend.",
+    "implementation_language": "Python",
+    "target_environment": {
+      "os_family": "EndeavourOS / Arch Linux",
+      "desktop_context": "niri; Hyprland/end-4/Noctalia also relevant",
+      "hardware": {
+        "cpu": "Intel Core i3-5005U, 2 cores / 4 threads",
+        "ram": "8 GB",
+        "gpu": "Intel HD Graphics 5500",
+        "storage": "256 GB Lexar SATA SSD",
+        "display": "1366x768 internal display"
+      }
+    },
+    "development_constraints": [
+      "Security-critical project; security invariants outrank convenience.",
+      "AGY is untrusted and must never be run unsandboxed.",
+      "Do not weaken, reorder, skip, or silently redesign frozen gates/invariants.",
+      "No new capability or expanded authority after a security invariant failure until fixed and regression-tested.",
+      "Avoid unnecessary dependencies; existing design favors Python stdlib, subprocess, Unix sockets, sqlite3, and controlled external runtimes.",
+      "Do not make claims of security properties that are not actually enforced."
+    ]
+  },
+  "core_architecture": {
+    "diagram": [
+      "USER",
+      "  ├─ CLI",
+      "  ├─ GUI",
+      "  └─ Voice",
+      "       ↓",
+      "JARVIS Controller",
+      "  ├─ Memory",
+      "  ├─ Policy (ALLOW / APPROVE / DENY)",
+      "  ├─ Audit (SQLite DB → external append-only anchor)",
+      "  ├─ Output Security Filter",
+      "  └─ AGY Adapter",
+      "       ↓",
+      "  AGY SANDBOX (Antigravity CLI, untrusted)",
+      "       ↓ Unix domain socket",
+      "  Jarvis MCP Server",
+      "       ↓",
+      "Linux / Browser / Desktop Tools"
+    ],
+    "trust_model": {
+      "trusted": [
+        "Jarvis Controller",
+        "Policy Engine",
+        "Approval system",
+        "Audit system",
+        "Memory policy",
+        "Output Security Filter",
+        "Voice runtime",
+        "MCP server",
+        "sandbox launcher"
+      ],
+      "untrusted": [
+        "AGY",
+        "AGY-generated reasoning",
+        "AGY-generated plans",
+        "AGY freeform responses",
+        "External trigger/event payloads"
+      ]
+    }
+  },
+  "frozen_invariants": {
+    "A": "AGY is untrusted.",
+    "B": "AGY is never run unsandboxed.",
+    "C": "Sandbox failure is fail-closed.",
+    "D": "OS containment and MCP policy are separate defenses.",
+    "E": "MCP uses a Unix domain socket; no localhost TCP dependency.",
+    "F": "capabilities.toml is integrity-verified, versioned, hashed, audited, and associated with a trusted expected hash; mismatch stops startup.",
+    "G": "Every capability invocation follows AGY → MCP → Policy → Tool.",
+    "H": "Memory is a capability.",
+    "I": "AGY cannot access audit.db, anchor.log, capabilities.toml, the trusted manifest hash, or Jarvis credentials.",
+    "J": "Audit integrity includes a host-controlled external append-only anchor.",
+    "K": "Any security invariant failure freezes new capability work until fixed and security tests pass.",
+    "L": "Voice has zero additional authority; voice requests use the same trusted Controller/security pipeline as CLI/GUI.",
+    "M": "Voice is not authentication; the MVP does not claim to authenticate the speaker.",
+    "N": "Voice approvals are request-bound, fresh, and single-use. They require one exact live approval, correct session, matching canonical argument hash, unexpired state, and unconsumed state.",
+    "O": "Approval recognition fails closed when approval STT confidence is below threshold. The failed attempt is rejected, does not consume or extend the approval, and does not trigger an automatic retry loop. MVP allows at most 3 failed manual confirmation attempts; the third failure denies the approval and requires re-issuing the original command.",
+    "P": "AGY cannot access microphone, speaker, audio buffers, raw recordings, STT, TTS, or Voice Runtime APIs.",
+    "Q": "Voice follows existing capabilities.toml classifications. SAFE executes normally; APPROVAL may use voice approval subject to G24 rules; DISABLED can never be authorized through voice.",
+    "R": "Voice approval events are auditable using structured metadata including session_id, approval_id, capability, argument_hash, timestamp, STT confidence, result, expiration state, and audio_hash. Raw audio is not retained by default.",
+    "S": "All user-facing output must pass through a centralized trusted Output Security Filter before CLI, TTS, GUI, notifications, or future presentation channels. It protects both tagged protected data and secrets transcribed/paraphrased by untrusted AGY.",
+    "S_addendum": "Output Security Filter is trusted security infrastructure: version-controlled, integrity-verifiable, regression-tested, and fail-closed on integrity/configuration failure."
+  },
+  "gate_status": {
+    "G0": "COMPLETE",
+    "G1": "COMPLETE",
+    "G2": "COMPLETE",
+    "G3": "COMPLETE",
+    "G4": "COMPLETE",
+    "G5": "COMPLETE",
+    "G6": "COMPLETE",
+    "G7": "COMPLETE",
+    "G8": "COMPLETE",
+    "G9": "COMPLETE",
+    "G10": "COMPLETE",
+    "G11": "COMPLETE",
+    "G12": "COMPLETE",
+    "G13": "COMPLETE",
+    "G14": "COMPLETE",
+    "G15": "COMPLETE",
+    "G16": "COMPLETE",
+    "G17": "COMPLETE",
+    "G18": "COMPLETE",
+    "G19": "NOT YET COMPLETE / NEXT FROZEN GATE",
+    "G20": "NOT YET COMPLETE",
+    "G21": "NOT YET COMPLETE",
+    "G22": "NOT YET COMPLETE",
+    "G23": "NOT YET COMPLETE",
+    "G24": "COMPLETE",
+    "G25": "NOT YET COMPLETE / PLANNED",
+    "G26": "NOT YET COMPLETE"
+  },
+  "completed_implementation": {
+    "overall": "G0-G18 were completed; G24 voice was then completed; latest reported test count is 176/176 green.",
+    "repo": {
+      "status": "User reported code committed to main branch.",
+      "reported_repository": "DhanvanthR23/jarvis",
+      "note": "Do not create or modify repositories unless the user explicitly requests execution; current conversation is primarily planning/handoff."
+    },
+    "G0": [
+      "11 core security invariants represented in jarvis/security/invariants.py.",
+      "Threat model covers AGY secrets/filesystem/sandbox escape/MCP bypass, policy/tool bugs, memory poisoning, audit tampering, and sandbox regression."
+    ],
+    "G1": [
+      "jarvis/sandbox/preflight.py verifies user, PID namespace, network namespace and related host capabilities.",
+      "Preflight failure disables AGY use."
+    ],
+    "G2": [
+      "bwrap sandbox with isolated namespaces.",
+      "Host /usr and /bin mounted read-only.",
+      "Minimal /etc, isolated /proc, minimal /dev, private /tmp, writable workspace.",
+      "Real home, SSH/GPG/config/browser credentials and private directories are unavailable.",
+      "Forbidden environment variables such as API keys/SSH tokens are stripped.",
+      "Network blocked."
+    ],
+    "G3": [
+      "Sandbox fixtures in tests/sandbox/ cover privilege escalation, network, credential harvesting and related escape attempts.",
+      "Expected forbidden operations fail non-zero."
+    ],
+    "G4": [
+      "Automated regression suite protects sandbox and other critical files.",
+      "Regression is expected whenever sandbox/bwrap/MCP/tools/policy/capabilities/filesystem/network/GUI/browser change."
+    ],
+    "G5": [
+      "SecureLauncher requires preflight and explicit sandbox verification.",
+      "Structural source parsing checks for zero unsandboxed fallback paths.",
+      "No fallback to running AGY outside the sandbox."
+    ],
+    "G6": [
+      "JarvisController in jarvis/core/controller.py coordinates agents, session state, policy, approval and tools."
+    ],
+    "G7": [
+      "Deterministic MockAgent implemented before relying on real AGY.",
+      "Mock E2E used to verify architecture."
+    ],
+    "G8": [
+      "MCP server in jarvis/mcp/server.py uses Unix domain socket only.",
+      "Jarvis acts as MCP server; AGY is the client."
+    ],
+    "G9": [
+      "capabilities.toml is hash-verified and version-controlled.",
+      "Startup load/hash/compare/trust check is required.",
+      "Corruption test appending 1 byte to capabilities.toml causes ManifestIntegrityError.",
+      "Mismatch halts startup."
+    ],
+    "G10": [
+      "PolicyEngine supports ALLOW / APPROVE / DENY.",
+      "Tools cannot authorize themselves."
+    ],
+    "G11": [
+      "jarvis/policy/approval.py contains SessionApprovalCache.",
+      "Approval is cryptographically bound to exact capability plus canonical sorted-arguments JSON payload.",
+      "Supports ALLOW_ONCE, ALLOW_SESSION with expiration, DENY.",
+      "Modified capability or arguments cannot reuse approval."
+    ],
+    "G12": [
+      "SQLite audit chain with cryptographic chaining.",
+      "External host-owned append-only anchor is provisioned by scripts/setup_anchor.sh.",
+      "chattr +a provides filesystem-level append-only semantics; do not describe this as absolutely immutable against host-root compromise.",
+      "JarvisController raises RuntimeError if audit logging fails instead of swallowing failures."
+    ],
+    "G13": [
+      "MemoryStore with strict memory policy.",
+      "Memory is treated as a capability."
+    ],
+    "G14": [
+      "Complete MockAgent E2E exists: CLI → Jarvis → MockAgent → MCP → Policy → Tool → Audit → Response.",
+      "Example flow: jarvis \"diagnose my wifi\"."
+    ],
+    "G15_G16": [
+      "Real AGY adapter executes AGY entirely inside verified bwrap sandbox.",
+      "AGY/MCP integration uses a Unix-domain-socket bridge because AGY exposed stdio/HTTP MCP rather than direct UDS.",
+      "Host MCP socket is bind-mounted into sandbox.",
+      "AGY executable and controlled mcp config are mounted into sandbox.",
+      "mcp_bridge.py forwards stdio to fixed sandbox UDS endpoint and does not implement auth/policy.",
+      "Per-session AGY state directories are ephemeral and aggressively purged in finally blocks across success/crash/timeout/kill.",
+      "Do not make the user's real ~/.gemini writable or mount their real profile.",
+      "Preferred session structure: runtime/agy/<session-id>/config/mcp_config.json plus runtime state/logs/installation_id.",
+      "Move bridge code outside .gemini, e.g. jarvis/agent/mcp_bridge.py, and mount read-only."
+    ],
+    "G17": [
+      "Read-only tools implemented: system.info, system.temperature, network.interfaces, network.status, processes.list, logs.search, files.read, files.search."
+    ],
+    "G18": [
+      "Controlled mutations implemented: files.write, service.restart, package.install.",
+      "Mutation capabilities are sanitized and approval-required.",
+      "No universal run_anything capability."
+    ]
+  },
+  "G19_to_G26_plan": {
+    "G19": {
+      "status": "Next gate after current planning.",
+      "focus": "Linux benchmark and controlled diagnostic/fix workflows.",
+      "scope": [
+        "Wi-Fi",
+        "Bluetooth",
+        "CPU/RAM/disk",
+        "systemd",
+        "HDMI",
+        "Niri/Hyprland configuration",
+        "logs",
+        "configuration-fix proposals"
+      ],
+      "metrics": [
+        "correctness",
+        "latency",
+        "policy correctness",
+        "tool success",
+        "resource impact",
+        "audit completeness"
+      ]
+    },
+    "G20": {
+      "focus": "GUI research for niri/Hyprland/wlroots; prefer semantic APIs over coordinate-driven automation."
+    },
+    "G21": {
+      "focus": "Isolated GUI tooling before real Wayland integration."
+    },
+    "G22": {
+      "focus": "Real Wayland integration only after G21."
+    },
+    "G23": {
+      "focus": "Browser as separate security domain; isolated browser context first."
+    },
+    "G24": {
+      "status": "COMPLETE",
+      "summary": "Voice frontend is implemented as a trusted interface around the existing Controller, policy, approval, audit, and output-security systems.",
+      "subgates": [
+        "G24.1 Architecture + interfaces",
+        "G24.2 Audio abstraction",
+        "G24.3 Resource feasibility benchmark before model integration",
+        "G24.4 Local STT",
+        "G24.5 Local TTS",
+        "G24.6 Voice state machine",
+        "G24.7 Voice → Controller integration",
+        "G24.8–G24.10 Approvals, confidence, concurrent pending approvals",
+        "G24.11–G24.12 Output Security Filter",
+        "G24.13 Audio privacy",
+        "G24.14 Wake word",
+        "G24.15–G24.16 E2E tests",
+        "G24.17 Cleanup"
+      ],
+      "implementation_report": {
+        "state_machine": "7 states: IDLE, LISTENING, STT, PROCESSING, WAITING_APPROVAL, EXECUTING, SPEAKING.",
+        "voice_session": "Tracks request-bound, single-use VoicePendingApproval; enforces invariant N and 3-attempt rule from O.",
+        "interfaces": "SpeechToText / TextToSpeech ABCs; AudioCapture / AudioPlayback ABCs; AudioChunk handles PCM, hashing, duration, WAV conversion.",
+        "benchmark": "Hard gate passed with Vosk small + Piper on target hardware; peak RAM 484 MB; STT latency 851 ms for 3 seconds audio; report said ~4.7 GB system memory available.",
+        "stt": "VoskSTT wrapper using vosk-model-small-en-us-0.15; lazy model loading.",
+        "tts": "PiperTTS; TTS only streams already-filtered text to AudioPlayback.",
+        "runtime": "VoiceRuntime captures mic input, sends bytes to STT, transitions states, immediately drops audio chunks after transcription.",
+        "controller": "process_voice_request() uses same authorization/policy pipeline as CLI.",
+        "output_filter": "Injected into CLI and Voice response paths.",
+        "approval": "VoiceApprovalHandler returns PENDING for approval-required actions; confirmation.py recognizes deliberate confirmations such as 'yes jarvis confirm'.",
+        "confidence": "Confirmation confidence threshold implemented at 0.8; low-confidence attempts rejected and count toward 3-attempt limit.",
+        "concurrency": "Multiple pending approvals return ambiguous and require disambiguation.",
+        "output_security": "Filter cannot be instantiated disabled; blocks SECRET/RESTRICTED tagged output; 14 regex patterns detect secrets in freeform AGY prose; violations replace entire response with generic safe string.",
+        "audio_privacy": "GC tests verify VoiceRuntime drops audio references after STT; no disk writes in capture path; raw audio hash logged in VOICE_UTTERANCE.",
+        "wake": "WakeEngine abstraction with MockWakeEngine and HotkeyWakeEngine; Jarvis is deaf in IDLE until triggered.",
+        "e2e": "Read-only and mutation E2E tests completed.",
+        "cleanup": "VoiceSession.cleanup_expired() runs synchronously at start of every voice request.",
+        "tests": "176/176 green at latest report."
+      }
+    },
+    "G25": {
+      "status": "PLANNED, NOT IMPLEMENTED.",
+      "purpose": "Controlled automation: schedules and validated event triggers that can execute pre-authorized capability-bound jobs without creating an authorization bypass.",
+      "core_rule": "Automation is an independently authorized execution context. Interactive approval must never silently become standing authorization for future automated actions.",
+      "invariants": {
+        "U": "Automation has no implicit authorization; prior interactive approval is not standing automation permission.",
+        "V": "Automation jobs are capability-bound to exact capabilities and arguments.",
+        "W": "Automation cannot dynamically expand its authority, capability scope, target, arguments, privilege, schedule, or network/filesystem scope without a new authorization state.",
+        "X": "Automation fails closed on invalid job definition, authorization, policy, integrity, scheduler state, sandbox, or audit state.",
+        "Y": "Automation is independently auditable and every run is identifiable as automation.",
+        "Z": "External triggers are untrusted input and cannot grant authority."
+      },
+      "planned_components": [
+        "automation/scheduler.py",
+        "automation/runtime.py",
+        "automation/models.py",
+        "automation/triggers.py",
+        "automation/authorization.py",
+        "automation/policy.py",
+        "automation/state.py",
+        "automation/executor.py",
+        "automation/recovery.py"
+      ],
+      "planned_job_fields": [
+        "job_id",
+        "version",
+        "name",
+        "trigger",
+        "capability",
+        "canonical arguments",
+        "authorization",
+        "enabled",
+        "expiration",
+        "resource limits"
+      ],
+      "automation_authorization_fields": [
+        "authorization_id",
+        "job_id",
+        "job_version",
+        "capability",
+        "argument_hash",
+        "allowed_trigger",
+        "created_at",
+        "expires_at",
+        "max_runs",
+        "enabled",
+        "revoked"
+      ],
+      "initial_trigger_order": [
+        "schedule triggers first",
+        "event triggers second"
+      ],
+      "execution_pipeline": "Trigger → Job lookup → integrity/version verification → authorization verification → expiration → capability classification → Automation Policy → Jarvis Controller → AGY if needed → MCP → Tool → Audit → Output Security Filter → notification/TTS/GUI/CLI.",
+      "important_constraints": [
+        "No universal automation shell.",
+        "No subprocess of model-generated arbitrary command strings.",
+        "Disabled capabilities cannot be automated.",
+        "AGY may reason inside an authorized job but cannot create authorization or expand scope.",
+        "Automation scheduler must invoke Controller rather than tools directly.",
+        "Interactive approval does not create standing automation permission.",
+        "Job changes to capability/arguments/trigger/schedule/targets require a new authorization.",
+        "Every automation authorization expires.",
+        "Use bounded concurrency and duplicate-trigger protection.",
+        "Crash recovery must not blindly replay potentially non-idempotent mutations.",
+        "Automation output uses the same Output Security Filter."
+      ],
+      "suggested_cli_surface": [
+        "jarvis automation list",
+        "jarvis automation status",
+        "jarvis automation inspect <job>",
+        "jarvis automation enable <job>",
+        "jarvis automation disable <job>",
+        "jarvis automation revoke <job>"
+      ],
+      "recommended_subgates": [
+        "G25.1 Automation threat model + invariants",
+        "G25.2 Job model + immutable versioning",
+        "G25.3 Automation authorization model",
+        "G25.4 Scheduler + schedule triggers",
+        "G25.5 Controller integration",
+        "G25.6 Automation Policy integration",
+        "G25.7 Persistent state + execution history",
+        "G25.8 Concurrency / duplicate execution protection",
+        "G25.9 Crash recovery",
+        "G25.10 Revocation / expiration",
+        "G25.11 Audit integration",
+        "G25.12 Event triggers",
+        "G25.13 AGY constrained automation",
+        "G25.14 Notification / presentation integration",
+        "G25.15 Security regression suite",
+        "G25.16 Full automation E2E"
+      ],
+      "important_tests": [
+        "test_interactive_approval_does_not_create_automation_authorization",
+        "test_automation_requires_explicit_authorization",
+        "test_automation_is_capability_bound",
+        "test_automation_arguments_are_request_bound",
+        "test_modified_job_requires_new_authorization",
+        "test_expired_automation_cannot_execute",
+        "test_revoked_automation_cannot_execute",
+        "test_disabled_capability_cannot_be_automated",
+        "test_event_cannot_grant_authority",
+        "test_event_cannot_modify_job_arguments",
+        "test_automation_cannot_bypass_policy",
+        "test_automation_cannot_call_arbitrary_shell",
+        "test_automation_cannot_expand_capability_scope",
+        "test_duplicate_trigger_does_not_duplicate_execution",
+        "test_crash_recovery_does_not_unsafe_replay",
+        "test_automation_audit_failure_fails_closed",
+        "test_agy_cannot_create_authorization",
+        "test_agy_cannot_modify_authorized_job",
+        "test_automation_output_uses_output_filter"
+      ]
+    },
+    "G26": {
+      "focus": "Multi-agent support under the same centralized policy/security system; not yet designed/implemented."
+    }
+  },
+  "voice_final_spec": {
+    "status": "FROZEN / IMPLEMENTED",
+    "stack": {
+      "audio": "PipeWire-oriented Linux desktop audio",
+      "stt": "Vosk small model: vosk-model-small-en-us-0.15",
+      "tts": "Piper",
+      "wake": "WakeEngine abstraction; MockWakeEngine and HotkeyWakeEngine implemented",
+      "controller": "Existing JarvisController",
+      "approval": "Existing G11 approval infrastructure extended for voice",
+      "output": "Central OutputSecurityFilter"
+    },
+    "critical_behavior": [
+      "Voice is a frontend, not a privilege boundary.",
+      "Voice is not speaker authentication.",
+      "Bare 'yes' is not sufficient for voice approval; deliberate confirmation phrasing is required.",
+      "Approval confirmation is bound to a unique live approval and canonical argument hash.",
+      "Approval must be unexpired and unconsumed.",
+      "Low-confidence confirmation (<0.8 in current implementation) is rejected and counts toward a 3-failure manual retry cap.",
+      "After 3 failed manual confirmation attempts, approval is denied and original command must be re-issued.",
+      "Raw audio is ephemeral and not persisted by default.",
+      "Approval-related audio hash can be audited without storing raw audio.",
+      "AGY has no audio-device/STT/TTS access.",
+      "All user-facing output is filtered centrally."
+    ]
+  },
+  "gui_design": {
+    "status": "DESIGN REQUEST READY; ACTUAL GUI IMPLEMENTATION IS A LATER G20-G22 CONCERN.",
+    "design_tool": "Google Stitch",
+    "latest_prompt_character": "Condensed Stitch prompt approved by user.",
+    "visual_direction": [
+      "dark-first",
+      "premium",
+      "futuristic but practical",
+      "Linux system console + modern AI workstation + mission control",
+      "minimal glass/translucency",
+      "restrained glow",
+      "crisp typography",
+      "strong hierarchy",
+      "subtle animations"
+    ],
+    "avoid": [
+      "generic ChatGPT clone",
+      "excessive neon",
+      "cyberpunk aesthetics",
+      "giant sci-fi circles",
+      "clutter",
+      "fake hacker terminal imagery"
+    ],
+    "navigation": [
+      "Dashboard",
+      "Chat",
+      "System",
+      "Automation",
+      "Approvals",
+      "Capabilities",
+      "Activity/Audit",
+      "Memory",
+      "Voice",
+      "Security",
+      "Settings"
+    ],
+    "required_gui_principle": "GUI is strictly a frontend. GUI → Jarvis Controller → existing security pipeline. Never GUI → Tool, Shell, AGY, systemd directly.",
+    "key_security_ux": [
+      "Clearly distinguish PROPOSED → AUTHORIZED → EXECUTING → COMPLETED.",
+      "Approval UI must show capability, target, relevant arguments, reason, risk/status, expiration.",
+      "Automation UI must clearly communicate recurring authorization and expiration/revocation.",
+      "Security state must reflect real backend state: Protected, Warning, Degraded, Blocked, Unavailable.",
+      "Capability registry is informational; GUI cannot directly modify capabilities.toml/policy.",
+      "All presentation channels use OutputSecurityFilter.",
+      "Command palette should be keyboard-friendly, e.g. Ctrl+K."
+    ],
+    "primary_screens": [
+      "Dashboard",
+      "Chat",
+      "System Overview",
+      "Approval Dialog",
+      "Automation Dashboard",
+      "Automation Creation",
+      "Automation Details",
+      "Capabilities",
+      "Activity/Audit",
+      "Memory",
+      "Voice",
+      "Security Status",
+      "Settings",
+      "Command Palette",
+      "Error/degraded security state"
+    ],
+    "target_sizes": [
+      "1366x768",
+      "1600x900",
+      "1920x1080"
+    ]
+  },
+  "decisions_and_nonnegotiables": [
+    "Do not revert to unsandboxed AGY fallback.",
+    "Do not mount the user's real ~/.gemini or credentials into AGY.",
+    "Do not replace UDS MCP with localhost TCP just for convenience.",
+    "Do not allow AGY to invoke tools outside MCP/policy.",
+    "Do not introduce a second approval/authorization system for voice, GUI, or automation.",
+    "Do not treat voice confirmation as speaker authentication.",
+    "Do not make a generic 'yes' authorize a voice mutation.",
+    "Do not store raw voice recordings by default.",
+    "Do not rely on AGY behaving honestly to protect secrets; enforce OutputSecurityFilter.",
+    "Do not remove regex/pattern secret detection because provenance tagging exists; it exists specifically to catch AGY transcription/paraphrase of secrets.",
+    "Do not let the redaction/replacement message reveal secret metadata.",
+    "Do not let interactive ALLOW_ONCE/ALLOW_SESSION silently create recurring automation permission.",
+    "Do not add arbitrary-shell automation.",
+    "Do not begin G20-G23 or G25-G26 by reordering the frozen roadmap unless the user explicitly authorizes a plan change."
+  ],
+  "known_open_items": {
+    "G19": "Must be completed before advancing the remaining frozen roadmap work.",
+    "GUI": "Google Stitch design is planned/being explored, but real GUI implementation follows G20-G22.",
+    "G25": "Implementation has not started; use the G25 plan above.",
+    "G26": "Not yet designed in detail.",
+    "voice_threshold": "Current implementation uses 0.8 for confirmation confidence. Treat this as an empirical operational threshold, not speaker authentication.",
+    "speaker_verification": "Explicitly deferred; not part of G24 MVP.",
+    "cloud_STT": "Not an automatic fallback. Any cloud STT would require a separate privacy/security decision.",
+    "voice_model_future": "Vosk/Piper are the currently hardware-validated engines, but interfaces are abstracted so models can be changed later."
+  },
+  "resume_instructions": {
+    "first_action": "Read this handoff completely before making architectural recommendations.",
+    "current_focus": "G24 voice is complete; G25 automation is the next major implementation plan, but G19 remains the next frozen gate in the original roadmap. GUI design work can continue as design research/prototyping without bypassing G20-G22 implementation order.",
+    "when_user_asks_for_code": "Prefer changes inside the existing architecture and run/describe targeted regression tests. Do not create a repository or alter the project unless explicitly asked.",
+    "when_user_asks_to_change_architecture": "Check against the frozen invariants and explain conflicts before proposing changes.",
+    "when_security_gap_is_found": "Elevate it to an invariant/control/test rather than adding an informal comment or relying on model behavior.",
+    "when_unsure_about_current_external software_behavior": "Use current web verification rather than relying on stale assumptions, especially for Antigravity CLI behavior, model/runtime versions, or Linux APIs."
+  },
+  "recent_context": [
+    "User asked for a final voice implementation plan, then pressure-tested confirmation replay, retry semantics, concurrent approvals, and output confidentiality.",
+    "G24 implementation report: 176/176 tests green.",
+    "User is currently using Google Antigravity to work on remaining project pieces while planning future work here.",
+    "User asked for a G25 implementation plan and clarified that CLI/GUI are intended access frontends. CLI already exists; GUI is planned through G20-G22.",
+    "User requested a condensed Google Stitch prompt for the Jarvis GUI; that prompt is reflected in gui_design."
+  ]
+}

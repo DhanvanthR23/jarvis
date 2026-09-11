@@ -49,14 +49,15 @@ def main():
     parser = argparse.ArgumentParser(description="Jarvis CLI Entrypoint")
     parser.add_argument("query", nargs="*", help="Non-interactive query string")
     parser.add_argument("--voice", action="store_true", help="Launch Voice Runtime")
+    parser.add_argument("--voice-engine", choices=["vosk", "faster-whisper"], default="vosk", help="Voice engine to use for STT/TTS (defaults to vosk)")
     parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
     args = parser.parse_args()
 
     # Determine backend
     backend = args.backend
     if not backend:
-        # Defaulting safely, but supporting live sandboxed AGY when running interactively
-        if args.query or args.voice:
+        # Defaulting safely, but supporting live sandboxed AGY when running interactively or via voice
+        if args.query:
             backend = "mock"
         else:
             backend = "agy"
@@ -70,10 +71,81 @@ def main():
     if args.voice:
         try:
             from jarvis.voice.runtime import VoiceRuntime
-            runtime = VoiceRuntime(controller=controller)
-            runtime.start()
-        except ImportError:
-            print("Voice support not available.", file=sys.stderr)
+            from jarvis.voice.state import VoiceState
+            from jarvis.voice.stt.local import VoskSTT
+            from jarvis.voice.tts.local import PiperTTS
+            from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
+
+            # Try to load real PyAudio if installed
+            try:
+                from jarvis.voice.audio_real import PyAudioCapture, PyAudioPlayback
+                capture = PyAudioCapture()
+                playback = PyAudioPlayback()
+                print("🎙️  Using real PyAudio for microphone and speakers")
+            except ImportError:
+                print("⚠️  PyAudio not installed (pip install PyAudio). Using Mock audio.", file=sys.stderr)
+                capture = MockAudioCapture()
+                playback = MockAudioPlayback()
+
+            # Voice Engine Selection
+            if getattr(args, 'voice_engine', 'vosk') == 'faster-whisper':
+                from jarvis.voice.stt.faster_whisper import FasterWhisperSTT
+                from jarvis.voice.tts.kokoro import KokoroTTS
+                stt = FasterWhisperSTT(model_size="base.en", compute_type="int8")
+                tts = KokoroTTS(playback)
+                
+                if not stt.is_available() or not tts.is_available():
+                    print(f"⚠️  Dependencies missing for faster-whisper/kokoro (pip install faster-whisper kokoro-onnx). Falling back to Vosk.", file=sys.stderr)
+                    stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")
+                    tts = PiperTTS(playback)
+                else:
+                    print("🚀 Using faster-whisper and Kokoro (High Accuracy/Local)")
+            else:
+                # Medium model (128MB) - excellent balance of speed and accuracy
+                stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")
+                tts = PiperTTS(playback)
+            
+            runtime = VoiceRuntime(capture=capture, playback=playback, stt=stt, tts=tts)
+            
+            # Connect the voice runtime to the controller
+            def handle_transcription(transcript):
+                if transcript.text:
+                    print(f"\n🗣️  You said: {transcript.text}")
+                    print("⚙️  Jarvis is thinking...")
+                    response = controller.process_request(transcript.text, is_voice=True)
+                    import re
+                    clean_text = re.sub(r'[*_#`|~\[\]>]', '', response)
+                    clean_text = re.sub(r'\n+', ' ', clean_text).strip()
+                    print(f"🤖 Jarvis: {clean_text}")
+                    runtime.speak(clean_text)
+                else:
+                    print("\n(No speech detected)")
+                    runtime.state_machine.transition(VoiceState.IDLE)
+
+            runtime.on_transcription = handle_transcription
+            
+            # Interactive voice loop
+            while True:
+                try:
+                    runtime.start_listening()
+                    action = input("\n🔴 Listening... (Press Enter to stop, or type 'q' to quit)\n")
+                    if action.strip().lower() in ('q', 'quit', 'exit'):
+                        print("\nGoodbye!")
+                        # Ensure stream is stopped
+                        if runtime.capture._recording:
+                            runtime.capture.stop()
+                        break
+                    
+                    print("🔄 Processing audio...")
+                    runtime.stop_listening()
+                except KeyboardInterrupt:
+                    print("\n\nGoodbye!")
+                    if runtime.capture._recording:
+                        runtime.capture.stop()
+                    break
+
+        except ImportError as e:
+            print(f"Voice support not available (missing dependencies: {e}).", file=sys.stderr)
             sys.exit(1)
         except Exception as e:
             print(f"Voice runtime error: {e}", file=sys.stderr)

@@ -27,11 +27,26 @@ class MCPServer:
         method = request.get("method")
         params = request.get("params", {})
         
-        if method == "tools/list":
-            return {"result": {"tools": [{"name": k, "description": v["description"]} for k, v in self.tool_registry.items()]}}
+        if method == "initialize":
+            return {
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {}
+                    },
+                    "serverInfo": {
+                        "name": "jarvis",
+                        "version": "1.0.0"
+                    }
+                }
+            }
+        elif method == "notifications/initialized":
+            return None # Notifications don't need a response
+        elif method == "tools/list":
+            return {"result": {"tools": [{"name": k, "description": v["description"], "inputSchema": {"type": "object", "properties": {}}} for k, v in self.tool_registry.items()]}}
         elif method == "tools/call":
             tool_name = params.get("name")
-            args = params.get("args", {})
+            args = params.get("arguments", {}) # Note: MCP uses 'arguments', not 'args'
             if tool_name not in self.tool_registry:
                 return {"error": {"code": -32601, "message": "Unknown tool"}}
             
@@ -44,15 +59,16 @@ class MCPServer:
                 if policy_decision == "DENY":
                     return {"error": {"code": -32000, "message": f"Policy denied: {decision_result.reason}"}}
                 elif policy_decision == "APPROVE":
-                    # For MVP, if no approval_handler is invoked here, we just assume DENY if not explicitly handled
-                    # Or handled by policy_engine internally. Let's assume APPROVE means we need approval but it's not handled here
                     return {"error": {"code": -32001, "message": "Approval required"}}
             
             try:
                 result = self.tool_registry[tool_name]["handler"](**args)
                 if self.audit_logger:
                     self.audit_logger.log_event("session_0", "agent", tool_name, args, policy_decision, approval_decision, str(result)[:100])
-                return {"result": result}
+                
+                # Format output properly for MCP
+                content = [{"type": "text", "text": str(result)}]
+                return {"result": {"content": content}}
             except Exception as e:
                 return {"error": {"code": -32603, "message": str(e)}}
         else:
@@ -92,12 +108,14 @@ class MCPServer:
                     if not data:
                         break
                     buffer += data
-                    if b"\n" in buffer:
+                    while b"\n" in buffer:
                         line, buffer = buffer.split(b"\n", 1)
                         request_dict = json.loads(line.decode("utf-8"))
                         response_dict = self._handle_request(request_dict)
-                        response_dict["id"] = request_dict.get("id", "")
-                        conn.sendall((json.dumps(response_dict) + "\n").encode("utf-8"))
+                        if response_dict is not None:
+                            response_dict["id"] = request_dict.get("id", "")
+                            response_dict["jsonrpc"] = "2.0"
+                            conn.sendall((json.dumps(response_dict) + "\n").encode("utf-8"))
                 except Exception as e:
                     break
 

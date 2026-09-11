@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# This script serves as the main entry point to start the Jarvis application.
+# It ensures the virtual environment is used if available and sets up the PYTHONPATH.
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ ! -f "/var/log/jarvis/anchor.log" ]; then
     echo "Error: anchor.log not found in /var/log/jarvis." >&2
@@ -18,4 +20,5 @@ fi
 
 export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
 
+echo "Starting Jarvis..."
 exec "$PYTHON_BIN" -m jarvis.cli.main "$@"

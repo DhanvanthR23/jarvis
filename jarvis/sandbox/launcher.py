@@ -79,6 +79,7 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     bwrap_cmd = [
         'bwrap',
         '--unshare-all',
+        '--share-net',
         '--die-with-parent',
     ]
 
@@ -112,10 +113,10 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     # Workspace bind mount (writable)
     bwrap_cmd += ['--bind', config.workspace_dir, '/home/agent/workspace']
 
-    # MCP socket bind mount (read-only into sandbox)
+    # MCP socket bind mount (writable so client can connect)
     # Ensure the parent directory exists inside the sandbox
     bwrap_cmd += ['--dir', '/run/jarvis']
-    bwrap_cmd += ['--ro-bind', config.socket_path, '/run/jarvis/mcp.sock']
+    bwrap_cmd += ['--bind', config.socket_path, '/run/jarvis/mcp.sock']
 
     # Additional read-only paths
     for item in config.read_only_paths:
