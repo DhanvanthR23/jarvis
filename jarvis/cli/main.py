@@ -206,24 +206,65 @@ def main():
             sys.exit(1)
     else:
         # REPL mode
-        print("Jarvis REPL active. Type 'exit' or 'quit' to quit.")
-        while True:
-            try:
-                user_input = input("jarvis> ").strip()
-                if user_input.lower() in ('exit', 'quit'):
+        try:
+            from rich.console import Console
+            from rich.markdown import Markdown
+            from rich.panel import Panel
+            console = Console()
+            ascii_art = r"""
+     __       ____   ____  __    __  __  _____ 
+    |  |     /    \ |    \|  |  |  ||  |/ ____|
+    |  |    |  /\  ||  _  /|  |  |  ||  |   (   
+ __ |  |    |  __  ||  |  \|  |__|  ||  |\___ \ 
+|  \|  |    | |  | ||  |\  \\      / |  |____) |
+ \____/     |_|  |_||__| \__\\____/  |__||_____/ 
+            """
+            console.print(Panel.fit(
+                f"[bold cyan]{ascii_art}[/bold cyan]\n[green]Security-First AI Assistant[/green] • [bold]REPL Active[/bold]",
+                border_style="cyan"
+            ))
+            console.print("[dim]Type 'exit' or 'quit' to quit.[/dim]\n")
+            
+            while True:
+                try:
+                    user_input = console.input("[bold cyan]jarvis[/bold cyan][bold white]>[/bold white] ").strip()
+                    if user_input.lower() in ('exit', 'quit'):
+                        break
+                    if not user_input:
+                        continue
+                    
+                    response = controller.process_request(user_input)
+                    console.print("\n")
+                    console.print(Markdown(response))
+                    console.print("\n")
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]Interrupted by user. Type 'exit' to quit.[/yellow]")
+                except EOFError:
+                    print()
                     break
-                if not user_input:
-                    continue
-                
-                response = controller.process_request(user_input)
-                print(response)
-            except KeyboardInterrupt:
-                print("\nInterrupted by user. Type 'exit' to quit.")
-            except EOFError:
-                print()
-                break
-            except Exception as e:
-                print(f"Runtime error: {e}", file=sys.stderr)
+                except Exception as e:
+                    console.print(f"[bold red]Runtime error:[/bold red] {e}")
+
+        except ImportError:
+            # Fallback to standard REPL if rich is not available somehow
+            print("Jarvis REPL active. Type 'exit' or 'quit' to quit.")
+            while True:
+                try:
+                    user_input = input("jarvis> ").strip()
+                    if user_input.lower() in ('exit', 'quit'):
+                        break
+                    if not user_input:
+                        continue
+                    
+                    response = controller.process_request(user_input)
+                    print(response)
+                except KeyboardInterrupt:
+                    print("\nInterrupted by user. Type 'exit' to quit.")
+                except EOFError:
+                    print()
+                    break
+                except Exception as e:
+                    print(f"Runtime error: {e}", file=sys.stderr)
 
 if __name__ == "__main__":
     main()
