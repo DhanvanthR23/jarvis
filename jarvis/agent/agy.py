@@ -86,8 +86,9 @@ class AGYBackend(AgentBackend):
 
         return session_dir
 
-    def process(self, user_input: str, tool_callback: Callable[[str, dict], dict]) -> str:
+    def process(self, user_input: str, tool_callback: Callable[[str, dict], dict], timeout: int = 300) -> str:
         """Process a request by launching AGY in the sandbox."""
+        print("Verifying sandbox...")
         session_dir = self._setup_session_dir()
         socket_path = os.path.join(session_dir, 'mcp.sock')
         
@@ -131,7 +132,9 @@ class AGYBackend(AgentBackend):
             command = ['/home/agent/agy', '--print', user_input, '--dangerously-skip-permissions', '--model', 'gemini-3.7-flash', '--effort', 'medium']
             
             try:
-                result = launcher.launch(command, timeout=300)
+                print("Starting AGY...")
+                print("Waiting for model response...")
+                result = launcher.launch(command, timeout=timeout)
                 
                 # Handling outputs properly
                 if not result.stdout.strip():

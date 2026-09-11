@@ -20,7 +20,7 @@ class MockAgent(AgentBackend):
     def __init__(self, scenarios: list[ScriptedScenario]):
         self.scenarios = scenarios
         
-    def process(self, user_input: str, tool_callback: Callable[[str, dict], dict]) -> str:
+    def process(self, user_input: str, tool_callback: Callable[[str, dict], dict], timeout: int = 300) -> str:
         input_lower = user_input.lower()
         
         # 1. Find matching scenario

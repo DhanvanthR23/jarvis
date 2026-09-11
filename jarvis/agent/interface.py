@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 class AgentBackend(ABC):
     @abstractmethod
-    def process(self, user_input: str, tool_callback: Callable[[str, dict], dict]) -> str:
+    def process(self, user_input: str, tool_callback: Callable[[str, dict], dict], timeout: int = 300) -> str:
         """
         Process user input and return a string response.
         

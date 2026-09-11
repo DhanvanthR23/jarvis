@@ -106,7 +106,8 @@ class JarvisController:
                     )
                     self.approval_cache.add_approval(req, resp)
                     
-                    response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a))
+                    timeout_val = 45 if is_voice else 300
+                    response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a), timeout=timeout_val)
                     return self.output_filter.filter(response)
 
         def tool_callback(tool_name: str, args: dict) -> dict:
@@ -129,7 +130,8 @@ class JarvisController:
         else:
             prompt = user_input
 
-        response = self.agent_backend.process(prompt, tool_callback)
+        timeout_val = 45 if is_voice else 300
+        response = self.agent_backend.process(prompt, tool_callback, timeout=timeout_val)
 
         # 4. Record response event
         resp_event = Event(
