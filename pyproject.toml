@@ -9,7 +9,6 @@ description = "A secure, multi-agent orchestration architecture"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "pybinstream",
     "playwright",
     "ddgs",
     "rich"
