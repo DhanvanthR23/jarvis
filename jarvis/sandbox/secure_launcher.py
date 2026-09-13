@@ -28,6 +28,7 @@ class SecureLauncher:
 
     def __init__(self, config: SandboxConfig):
         self.config = config
+        self._preflight_result = None  # Cached after first check
 
     def launch(
         self, command: list[str], timeout: int = 30,
@@ -35,15 +36,18 @@ class SecureLauncher:
         """Launch a command inside a verified sandbox.
 
         Steps:
-        1. Run preflight checks — must all pass
+        1. Run preflight checks — must all pass (cached after first run)
         2. Build the bwrap command
         3. Verify sandbox isolation
         4. Execute the command
 
         Raises SandboxError on ANY failure. No fallback.
         """
-        # Step 1: Preflight — must pass
-        preflight_result = run_preflight()
+        # Step 1: Preflight — must pass (cached per-session, not per-dialogue)
+        if self._preflight_result is None:
+            self._preflight_result = run_preflight()
+        preflight_result = self._preflight_result
+
         if not preflight_result.passed:
             failed = [
                 name for name, check in preflight_result.checks.items()

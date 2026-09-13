@@ -4,6 +4,7 @@ import time
 import unittest
 
 from jarvis.mcp.server import MCPClient, MCPServer
+from tests.sandbox.helpers import REQUIRE_BWRAP
 
 
 class TestMCPServer(unittest.TestCase):
@@ -30,6 +31,7 @@ class TestMCPServer(unittest.TestCase):
         res = self.server._handle_request({"method": "tools/call", "params": {"name": "not_exist", "arguments": {}}, "id": "1"})
         self.assertIn("error", res)
         
+    @REQUIRE_BWRAP
     def test_client_server_integration(self):
         self.server.register_tool("hello", lambda name: f"Hello {name}")
         self.server.start()

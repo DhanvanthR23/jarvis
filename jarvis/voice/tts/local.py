@@ -16,11 +16,8 @@ class PiperTTS(TextToSpeech):
     def __init__(self, playback: AudioPlayback, model_path: str | None = None):
         self._playback = playback
         self._available = False
-        self._process = None
+        self._voice = None
         
-        # In a real environment, we'd use the python bindings for piper.
-        # Alternatively, we can use the piper executable if installed.
-        # For this MVP, we verify `piper` module exists.
         try:
             import piper
             self._piper = piper
@@ -29,36 +26,45 @@ class PiperTTS(TextToSpeech):
             self._piper = None
             self._available = False
 
-        self._model_path = model_path
+        self._model_path = model_path or "en_GB-alan-medium.onnx"
+        self._config_path = self._model_path + ".json"
 
     def is_available(self) -> bool:
         return self._available
+        
+    def _ensure_model(self):
+        import os
+        if not os.path.exists(self._model_path) or not os.path.exists(self._config_path):
+            print(f"Downloading default Piper model: {self._model_path}...")
+            import urllib.request
+            # Auto-download a lightweight default english model if missing
+            base_url = "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/alan/medium"
+            urllib.request.urlretrieve(f"{base_url}/en_GB-alan-medium.onnx", self._model_path)
+            urllib.request.urlretrieve(f"{base_url}/en_GB-alan-medium.onnx.json", self._config_path)
+            
+        if self._voice is None:
+            self._voice = self._piper.PiperVoice.load(self._model_path, config_path=self._config_path)
 
     def speak(self, text: str) -> None:
-        """Synthesize and play the text."""
+        """Synthesize and play the text synchronously."""
         if not self._available:
             raise RuntimeError("Piper TTS is not available")
         if not self._playback.is_available():
             raise RuntimeError("Audio playback is not available")
 
-        # For this MVP without a fully configured Piper model lying around,
-        # we will generate a synthetic WAV if we don't have a real model,
-        # or just use the mock playback in tests.
-        # In production, we would use: piper.PiperVoice.load(model_path).synthesize(text)
+        self._ensure_model()
         
-        # Here we just generate a dummy wav for the mock playback to play,
-        # simulating what piper would output.
+        import io
+        import wave
         
         buf = io.BytesIO()
         with wave.open(buf, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(22050)
-            wf.writeframes(b'\x00\x00' * 1000)
+            # Piper synthesize_wav will write directly to the wave file
+            self._voice.synthesize_wav(text, wf)
             
         wav_data = buf.getvalue()
         
-        # Play it
+        # Play it synchronously (blocks until playback finishes)
         self._playback.play(wav_data)
 
     def stop(self) -> None:

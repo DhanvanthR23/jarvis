@@ -9,7 +9,7 @@ from jarvis.policy.approval import CLIApprovalHandler
 from jarvis.policy.engine import PolicyEngine
 
 
-def get_controller(backend_name: str = "mock") -> JarvisController:
+def get_controller(backend_name: str = "mock", active_role: str = "system_diagnostics", verbose: bool = False) -> JarvisController:
     import os
 
     from jarvis.agent.agy import AGYBackend
@@ -52,7 +52,7 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
         with open(hash_path, 'r') as f:
             trusted_hash = f.read().strip()
         manifest = load_manifest(manifest_path, trusted_hash)
-        policy_engine = PolicyEngine(manifest)
+        policy_engine = PolicyEngine(manifest, active_role=active_role)
         
     approval_handler = CLIApprovalHandler()
     if os.path.isdir("/var/log/jarvis") and os.access("/var/log/jarvis", os.W_OK):
@@ -67,26 +67,68 @@ def get_controller(backend_name: str = "mock") -> JarvisController:
     from jarvis.voice.session import VoiceSession
     voice_session = VoiceSession()
 
+    from jarvis.memory.store import MemoryStore, MemoryEntry, MemoryCategory
+    from jarvis.memory.policy import MemoryPolicyEngine, MemoryWriteRequest
+    import time
+    
+    memory_db_path = os.path.expanduser("~/.jarvis/memory.db")
+    os.makedirs(os.path.dirname(memory_db_path), exist_ok=True)
+    memory_store = MemoryStore(memory_db_path)
+    memory_policy = MemoryPolicyEngine(memory_store, approval_handler=approval_handler)
+
     controller = JarvisController(
         agent_backend=agent,
         policy_engine=policy_engine,
         approval_handler=approval_handler,
         audit_logger=audit_logger,
+        memory_store=memory_store,
         voice_session=voice_session,
+        verbose=verbose,
     )
     
     from jarvis.tools.registry import register_readonly_tools
     register_readonly_tools(controller)
     
+    # Register Memory Tools
+    def memory_write(key: str, value: str, category: str = "facts"):
+        try:
+            cat = MemoryCategory(category)
+        except ValueError:
+            return {"status": "error", "message": f"Invalid category: {category}"}
+            
+        entry = MemoryEntry(
+            key=key, value=value, category=cat, source="agent", 
+            created_at=time.time(), updated_at=time.time(), confidence="agent_high_impact"
+        )
+        req = MemoryWriteRequest(entry=entry, source_type="agent_high_impact")
+        success = memory_policy.process_write(req)
+        return {"status": "success" if success else "denied"}
+
+    def memory_read(key: str):
+        entry = memory_store.read(key)
+        if not entry:
+            return {"status": "not_found"}
+        return {"status": "success", "value": entry.value, "category": entry.category.value}
+
+    def memory_search(query: str):
+        results = memory_store.search(query=query)
+        return {"status": "success", "results": [{"key": r.key, "value": r.value} for r in results]}
+
+    controller.register_tool('memory_write', memory_write, 'Write a fact to persistent memory')
+    controller.register_tool('memory_read', memory_read, 'Read a fact from persistent memory by key')
+    controller.register_tool('memory_search', memory_search, 'Search persistent memory')
+
     return controller
 
 def main():
     parser = argparse.ArgumentParser(description="Jarvis CLI Entrypoint")
     parser.add_argument("query", nargs="*", help="Non-interactive query string")
     parser.add_argument("--voice", action="store_true", help="Launch Voice Runtime")
-    parser.add_argument("--voice-engine", choices=["vosk", "faster-whisper"], default="vosk", help="Voice engine to use for STT/TTS (defaults to vosk)")
-    parser.add_argument("--voice-name", default=None, help="Specific voice to use for Kokoro TTS (defaults to JARVIS_VOICE_NAME env var or am_michael)")
+    parser.add_argument("--stt-engine", choices=["whisper"], default="whisper", help="STT engine to use (defaults to whisper)")
+    parser.add_argument("--tts-engine", choices=["piper", "cloud"], default="piper", help="TTS engine to use (defaults to piper)")
     parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
+    parser.add_argument("--role", default="system_diagnostics", help="Capability role to assume (defaults to system_diagnostics)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed logs about tool arguments, policy reasons, and outputs")
     args = parser.parse_args()
 
     # Determine backend
@@ -99,7 +141,7 @@ def main():
             backend = "agy"
 
     try:
-        controller = get_controller(backend_name=backend)
+        controller = get_controller(backend_name=backend, active_role=args.role, verbose=args.verbose)
     except Exception as e:
         print(f"Failed to initialize controller: {e}", file=sys.stderr)
         sys.exit(1)
@@ -109,7 +151,6 @@ def main():
             from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
             from jarvis.voice.runtime import VoiceRuntime
             from jarvis.voice.state import VoiceState
-            from jarvis.voice.stt.local import VoskSTT
             from jarvis.voice.tts.local import PiperTTS
 
             # Try to load real PyAudio if installed
@@ -117,48 +158,69 @@ def main():
                 from jarvis.voice.audio_real import PyAudioCapture, PyAudioPlayback
                 capture = PyAudioCapture()
                 playback = PyAudioPlayback()
-                print("🎙️  Using real PyAudio for microphone and speakers")
+                print("  Using real PyAudio for microphone and speakers")
             except ImportError:
-                print("⚠️  PyAudio not installed (pip install PyAudio). Using Mock audio.", file=sys.stderr)
+                print("  PyAudio not installed (pip install PyAudio). Using Mock audio.", file=sys.stderr)
                 capture = MockAudioCapture()
                 playback = MockAudioPlayback()
 
-            # Voice Engine Selection
-            if getattr(args, 'voice_engine', 'vosk') == 'faster-whisper':
+            # Engine Selection
+            stt_engine = getattr(args, 'stt_engine', 'whisper')
+            tts_engine = getattr(args, 'tts_engine', 'piper')
+
+            # --- STT Setup ---
+            if stt_engine == 'whisper':
                 from jarvis.voice.stt.faster_whisper import FasterWhisperSTT
-                from jarvis.voice.tts.kokoro import (
-                    KokoroTTS,
-                    resolve_kokoro_voice_name,
-                )
+                model_size = "base.en"
+                stt = FasterWhisperSTT(model_size=model_size, compute_type="int8")
                 
-                resolved_voice_name = resolve_kokoro_voice_name(getattr(args, 'voice_name', None))
-                
-                stt = FasterWhisperSTT(model_size="base.en", compute_type="int8")
-                tts = KokoroTTS(playback, voice_name=resolved_voice_name)
-                
-                if not stt.is_available() or not tts.is_available():
-                    print("⚠️  Dependencies missing for faster-whisper/kokoro (pip install faster-whisper kokoro-onnx). Falling back to Vosk.", file=sys.stderr)
-                    stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")
-                    tts = PiperTTS(playback)
+                if not stt.is_available():
+                    print("  faster-whisper dependencies missing (pip install faster-whisper).", file=sys.stderr)
+                    sys.exit(1)
                 else:
-                    print(f"🚀 Using faster-whisper and Kokoro (Voice: {resolved_voice_name})")
+                    print(f" Using Faster-Whisper STT (Model: {model_size})")
+
+            # --- TTS Setup ---
+            if tts_engine == 'cloud':
+                from jarvis.voice.proxy.daemon import TTSProxyDaemon
+                from jarvis.voice.tts.cloud import CloudTTS
+
+                # Create Piper instance for daemon-side fallback
+                piper_fallback = PiperTTS(playback)
+
+                # Start the host-side proxy daemon
+                tts_daemon = TTSProxyDaemon(
+                    playback=playback,
+                    piper_tts=piper_fallback,
+                )
+                tts_daemon.start()
+                print(f" TTS proxy daemon started on {tts_daemon.socket_path}")
+
+                # Create the agent-side client (IPC-only, no network)
+                tts = CloudTTS(playback, socket_path=tts_daemon.socket_path)
+
+                if not tts.is_available():
+                    print("  Cloud TTS daemon not reachable. Falling back to Piper.", file=sys.stderr)
+                    tts_daemon.stop()
+                    tts = piper_fallback
+                else:
+                    print(" Using Cloud TTS (Edge TTS via host-side proxy)")
             else:
-                # Medium model (128MB) - excellent balance of speed and accuracy
-                stt = VoskSTT(model_name="vosk-model-en-us-0.22-lgraph")
                 tts = PiperTTS(playback)
+                print(" Using Piper TTS")
             
             runtime = VoiceRuntime(capture=capture, playback=playback, stt=stt, tts=tts)
             
             # Connect the voice runtime to the controller
             def handle_transcription(transcript):
                 if transcript.text:
-                    print(f"\n🗣️  You said: {transcript.text}")
-                    print("⚙️  Jarvis is thinking...")
+                    print(f"\n  You said: {transcript.text}")
+                    print("  Jarvis is thinking...")
                     response = controller.process_request(transcript.text, is_voice=True, transcript=transcript)
                     import re
                     clean_text = re.sub(r'[*_#`|~\[\]>]', '', response)
                     clean_text = re.sub(r'\n+', ' ', clean_text).strip()
-                    print(f"🤖 Jarvis: {clean_text}")
+                    print(f"󰚩 Jarvis: {clean_text}")
                     runtime.speak(clean_text)
                 else:
                     print("\n(No speech detected)")
@@ -170,7 +232,7 @@ def main():
             while True:
                 try:
                     runtime.start_listening()
-                    action = input("\n🔴 Listening... (Press Enter to stop, or type 'q' to quit)\n")
+                    action = input("\n Listening... (Press Enter to stop, or type 'q' to quit)\n")
                     if action.strip().lower() in ('q', 'quit', 'exit'):
                         print("\nGoodbye!")
                         # Ensure stream is stopped
@@ -178,7 +240,7 @@ def main():
                             runtime.capture.stop()
                         break
                     
-                    print("🔄 Processing audio...")
+                    print(" Processing audio...")
                     runtime.stop_listening()
                 except KeyboardInterrupt:
                     print("\n\nGoodbye!")

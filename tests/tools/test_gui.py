@@ -1,3 +1,8 @@
+import os
+from unittest.mock import patch
+
+import pytest
+
 from jarvis.tools.gui_isolated import (
     desktop_click as isolated_click,
 )
@@ -32,16 +37,22 @@ from jarvis.tools.gui_real import (
 
 
 def test_isolated_gui():
-    assert desktop_screenshot() == "Took a screenshot of the isolated desktop"
-    assert desktop_windows() == ["Mock Window 1", "Mock Window 2"]
-    assert isolated_focus("123") == "Focused on window 123"
-    assert isolated_click(10, 20) == "Clicked at (10, 20)"
-    assert isolated_type("hello") == "Typed: hello"
-    assert isolated_keypress("enter") == "Pressed key: enter"
+    """The isolated GUI interface uses its real Wayland clients."""
+    with pytest.raises(NotImplementedError):
+        desktop_windows()
+    with pytest.raises(NotImplementedError):
+        isolated_focus("123")
+    with patch("jarvis.tools.gui_isolated.subprocess.run") as run:
+        assert isolated_click(10, 20) == "Clicked isolated desktop at (10, 20)"
+        assert isolated_type("hello") == "Typed on isolated desktop: hello"
+        assert isolated_keypress("enter") == "Pressed key on isolated desktop: enter"
+    assert run.call_count == 4
 
 def test_real_gui():
-    assert desktop_observe() == "Observed the real desktop"
-    assert real_focus("456") == "Focused on real window 456"
-    assert real_click(30, 40) == "Clicked real desktop at (30, 40)"
-    assert real_type("world") == "Typed on real desktop: world"
-    assert real_keypress("esc") == "Pressed key on real desktop: esc"
+    with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-proxy-test"}):
+        with patch("jarvis.tools.gui_real.subprocess.run") as run:
+            assert real_focus("456") == "Focused on real window 456"
+            assert real_click(30, 40) == "Clicked real desktop at (30, 40)"
+            assert real_type("world") == "Typed on real desktop: world"
+            assert real_keypress("esc") == "Pressed key on real desktop: esc"
+    assert run.call_count == 4

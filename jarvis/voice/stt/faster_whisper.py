@@ -38,7 +38,7 @@ class FasterWhisperSTT(SpeechToText):
             # Load the model on CPU with int8 quantization to prevent thermal throttling
             print(f"\n⏳ Loading faster-whisper model '{self._model_size}' (this may take a minute if downloading for the first time)...", flush=True)
             self._model = self._WhisperModel(self._model_size, device="cpu", compute_type=self._compute_type)
-            print("✅ Model loaded!", flush=True)
+            print(" Model loaded!", flush=True)
         return self._model
 
     def is_available(self) -> bool:

@@ -27,9 +27,8 @@ class JarvisController:
         tool_registry: dict | None = None,
         voice_session=None,
         output_filter=None,
+        verbose: bool = False,
     ):
-        from jarvis.output.filter import OutputSecurityFilter
-        
         self.agent_backend = agent_backend
         self.policy_engine = policy_engine
         self.approval_handler = approval_handler
@@ -37,11 +36,22 @@ class JarvisController:
         self.memory_store = memory_store
         self.tool_registry = tool_registry or {}
         self.voice_session = voice_session
-        self.output_filter = output_filter or OutputSecurityFilter()
-        self._session = Session()
         
+        # Invariant O: Output Filtering
+        from jarvis.output.filter import OutputSecurityFilter
+        self.output_filter = output_filter or OutputSecurityFilter()
+
         from jarvis.policy.approval import SessionApprovalCache
         self.approval_cache = SessionApprovalCache()
+        
+        self.verbose = verbose
+        
+        self._session = Session()
+        self.session.add_event(Event(
+            type=EventType.SESSION_START,
+            session_id=self.session.session_id,
+            data={},
+        ))
 
     @property
     def session(self) -> Session:
@@ -83,30 +93,45 @@ class JarvisController:
                 result = process_confirmation(transcript, self.voice_session)
                 if result['status'] == 'rejected':
                     if result['reason'] == 'insufficient_confidence':
-                        return self.output_filter.filter("I couldn't hear that clearly enough to confirm. Please repeat.")
-                    return self.output_filter.filter("Confirmation rejected.")
-                elif result['status'] == 'ambiguous':
-                    return self.output_filter.filter("Multiple approvals pending. Please specify which one to confirm.")
-                elif result['status'] == 'confirmed':
-                    approval = result['approval']
-                    # Create the synthetic ApprovalRequest & Response to inject into the cache
+                        if self.verbose:
+                            print("[VERBOSE] Voice confirmation rejected (insufficient confidence)")
+                        return self.output_filter.filter("I couldn't hear that clearly. Could you say yes or no again?")
+                    return self.output_filter.filter("Action canceled.")
+
+                if result['status'] == 'confirmed':
+                    voice_approval = result['approval']
                     req = ApprovalRequest(
                         actor='agent',
-                        capability=approval.capability,
-                        arguments=approval.arguments,
+                        capability=voice_approval.capability,
+                        arguments=voice_approval.arguments,
                         reason='Voice confirmed',
-                        risk='approval'
+                        risk='approval',
+                    )
+                    
+                    if self.verbose:
+                        print(f"[VERBOSE] Voice confirmation approved for {req.capability}")
+
+                    self._audit_event(
+                        req.capability, req.arguments, 'approve',
+                        'allow_session', 'voice confirmed',
                     )
                     resp = ApprovalResponse(
                         request_id=req.request_id,
                         decision=ApprovalDecision.ALLOW_SESSION,
                         responded_at=time.time(),
                         responded_by="voice_system",
-                        expires_at=approval.expires_at
+                        expires_at=voice_approval.expires_at
                     )
                     self.approval_cache.add_approval(req, resp)
                     
-                    timeout_val = 45 if is_voice else 300
+                    timeout_val = 300
+                    if self.policy_engine and self.policy_engine.active_role:
+                        role = self.policy_engine.manifest.roles.get(self.policy_engine.active_role)
+                        if role and getattr(role, 'max_execution_time', None):
+                            timeout_val = role.max_execution_time
+                    if is_voice:
+                        timeout_val = min(timeout_val, 120) if timeout_val > 45 else 45
+                        
                     response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a), timeout=timeout_val)
                     return self.output_filter.filter(response)
 
@@ -130,7 +155,20 @@ class JarvisController:
         else:
             prompt = user_input
 
-        timeout_val = 45 if is_voice else 300
+        timeout_val = 300
+        if self.policy_engine and self.policy_engine.active_role:
+            role = self.policy_engine.manifest.roles.get(self.policy_engine.active_role)
+            if role and getattr(role, 'max_execution_time', None):
+                timeout_val = role.max_execution_time
+                
+        if is_voice:
+            # Voice mode needs to answer quickly, but browser/GUI might take longer.
+            # We cap it at 120s if the role allows long execution.
+            timeout_val = min(timeout_val, 120) if timeout_val > 45 else 45
+
+        if self.verbose:
+            print(f"[VERBOSE] Launching AGY with timeout {timeout_val}s")
+
         response = self.agent_backend.process(prompt, tool_callback, timeout=timeout_val)
 
         # 4. Record response event
@@ -149,6 +187,10 @@ class JarvisController:
         Invariant G: Every capability invocation is policy-checked.
         AGY → MCP → Policy → Tool
         """
+        print(f" [Jarvis] Executing {tool_name}...")
+        if self.verbose:
+            print(f"[VERBOSE] Tool args: {args}")
+        
         # Record tool call event
         self.session.add_event(Event(
             type=EventType.TOOL_CALL,
@@ -166,9 +208,25 @@ class JarvisController:
                 session_id=self.session.session_id,
                 data={'tool_name': tool_name},
             ))
+            # Dynamic Role Auto-Switching
+            if self.policy_engine.active_role:
+                current_role_def = self.policy_engine.manifest.roles.get(self.policy_engine.active_role)
+                if current_role_def and tool_name not in current_role_def.allowed_capabilities:
+                    # Try to find a role that allows this capability
+                    allowed_roles = ["system_diagnostics", "browser_research", "gui_automation", "system_maintenance", "orchestrator"]
+                    for role_name in allowed_roles:
+                        role_def = self.policy_engine.manifest.roles.get(role_name)
+                        if role_def and tool_name in role_def.allowed_capabilities:
+                            if self.verbose:
+                                print(f"[VERBOSE] Auto-switching role from {self.policy_engine.active_role} to {role_name} for capability {tool_name}")
+                            self.policy_engine.active_role = role_name
+                            break
 
             result = self.policy_engine.check(tool_name, args)
             policy_decision = result.decision.value  # 'allow', 'approve', 'deny'
+            
+            if self.verbose:
+                print(f"[VERBOSE] Policy decision: {policy_decision} (Reason: {result.reason})")
 
             if result.decision.value == 'deny':
                 self._audit_event(
@@ -202,11 +260,15 @@ class JarvisController:
                     
                     if self.approval_cache.is_approved(approval_req):
                         approval_decision = 'allow_session_cached'
+                        if self.verbose:
+                            print(f"[VERBOSE] Capability {tool_name} approved via cache.")
                     else:
                         approval_resp = self.approval_handler.request_approval(
                             approval_req,
                         )
                         approval_decision = approval_resp.decision.value
+                        if self.verbose:
+                            print(f"[VERBOSE] Human approval decision: {approval_decision}")
                         
                         if approval_resp.decision.value == 'allow_session':
                             self.approval_cache.add_approval(approval_req, approval_resp)
@@ -250,8 +312,41 @@ class JarvisController:
                         'message': 'Approval required but no handler available',
                     }
 
+        # Wayland Visual Indicator (G22 / Invariant V)
+        if tool_name in ["desktop_observe", "real_desktop_focus", "real_desktop_click", "real_desktop_type", "real_desktop_keypress"]:
+            import json
+            import os
+            import subprocess
+            indicator_path = "/tmp/jarvis_wayland_indicator.json"
+            
+            # Layer 1: Persistent Waybar state file
+            try:
+                with open(indicator_path, "w") as f:
+                    json.dump({"text": " JARVIS ACTIVE", "class": "active", "tooltip": f"Capability {tool_name} is running"}, f)
+            except Exception:
+                pass
+                
+            # Layer 2: Immediate Dunst notification
+            try:
+                subprocess.run([
+                    "dunstify", "-a", "Jarvis", "-u", "critical",
+                    "Jarvis Observation Active", f"Authorized capability: {tool_name}"
+                ], capture_output=True)
+            except Exception:
+                pass
+
+        if self.verbose:
+            print(f"[VERBOSE] Invoking underlying tool code...")
+            
         # Execute the tool
         tool_result = self._call_tool(tool_name, args)
+        
+        if self.verbose:
+            # We don't want to flood the console if tool_result is a giant base64 image
+            result_str = str(tool_result)
+            if len(result_str) > 500:
+                result_str = result_str[:500] + "... [TRUNCATED FOR LOGS]"
+            print(f"[VERBOSE] Tool result: {result_str}")
 
         # Record result
         self.session.add_event(Event(

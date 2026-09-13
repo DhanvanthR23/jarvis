@@ -54,3 +54,4 @@ def register_readonly_tools(controller: JarvisController):
     controller.register_tool('browser_type', browser.browser_type, 'Type into a browser element')
     controller.register_tool('browser_download', browser.browser_download, 'Download a file from a URL')
     controller.register_tool('browser_upload', browser.browser_upload, 'Upload a file via browser')
+    controller.register_tool('browser_search', browser.browser_search, 'Search the web for a query and return top results')

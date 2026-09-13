@@ -1,19 +1,112 @@
+import os
+import time
+import subprocess
+import tempfile
+import base64
+
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    HAS_PIL = False
+
+_LAST_SCREENSHOT_TIME = 0.0
+MIN_INTERVAL = 2.0  # max 1 screenshot per 2 seconds
+
+class WaylandProxyError(Exception):
+    pass
+
+class RateLimitError(Exception):
+    pass
+
+def _verify_wayland_proxy():
+    # Require a proxy. If WAYLAND_DISPLAY is raw wayland-0, refuse.
+    display = os.environ.get("WAYLAND_DISPLAY", "")
+    if not display:
+        raise WaylandProxyError("WAYLAND_DISPLAY is not set.")
+    
+    # We require the display to be a proxy. 
+    if display == "wayland-0":
+        raise WaylandProxyError("Raw WAYLAND_DISPLAY (wayland-0) is not allowed. A filtering proxy is required (whitelist: screencopy, virtual-keyboard, virtual-pointer).")
+
 def desktop_observe() -> str:
-    """Takes a mock observation of the real desktop."""
-    return "Observed the real desktop"
+    """Takes an observation of the real desktop using grim via a Wayland proxy."""
+    global _LAST_SCREENSHOT_TIME
+    
+    _verify_wayland_proxy()
+    
+    now = time.time()
+    if now - _LAST_SCREENSHOT_TIME < MIN_INTERVAL:
+        raise RateLimitError(f"Screenshot frequency exceeded. Max 1 every {MIN_INTERVAL} seconds.")
+    
+    _LAST_SCREENSHOT_TIME = now
+    
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        tmp_path = f.name
+        
+    try:
+        # Run grim restricted
+        subprocess.run(["grim", "-t", "png", tmp_path], check=True, capture_output=True)
+        
+        # Optimize image if PIL is available
+        if HAS_PIL:
+            try:
+                with Image.open(tmp_path) as img:
+                    img.thumbnail((1920, 1080), Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.ANTIALIAS)
+                    if img.mode in ("RGBA", "P"):
+                        img = img.convert("RGB")
+                    img.save(tmp_path, "JPEG", quality=85, optimize=True)
+            except Exception:
+                pass
+                
+        # Encode or return path (typically tools return path or base64)
+        with open(tmp_path, "rb") as img:
+            b64 = base64.b64encode(img.read()).decode("utf-8")
+        return f"Screenshot taken. Base64: {b64[:20]}..."
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"grim failed: {e.stderr.decode('utf-8', errors='ignore')}")
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+desktop_observe.required_capabilities = ["CAP_WAYLAND_OBSERVE"]
 
 def desktop_focus(window_id: str) -> str:
     """Mock focuses on a specific window on the real desktop."""
     return f"Focused on real window {window_id}"
 
+desktop_focus.required_capabilities = ["CAP_WAYLAND_CONTROL"]
+
 def desktop_click(x: int, y: int) -> str:
-    """Mock clicks on the real desktop."""
-    return f"Clicked real desktop at ({x}, {y})"
+    """Clicks on the real desktop using wlrctl."""
+    _verify_wayland_proxy()
+    try:
+        subprocess.run(["wlrctl", "pointer", "move", str(x), str(y)], check=True, capture_output=True)
+        subprocess.run(["wlrctl", "pointer", "click", "left"], check=True, capture_output=True)
+        return f"Clicked real desktop at ({x}, {y})"
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"wlrctl failed: {e.stderr.decode('utf-8', errors='ignore')}")
+
+desktop_click.required_capabilities = ["CAP_WAYLAND_CONTROL"]
 
 def desktop_type(text: str) -> str:
-    """Mock types text on the real desktop."""
-    return f"Typed on real desktop: {text}"
+    """Types text on the real desktop using wtype."""
+    _verify_wayland_proxy()
+    try:
+        subprocess.run(["wtype", text], check=True, capture_output=True)
+        return f"Typed on real desktop: {text}"
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"wtype failed: {e.stderr.decode('utf-8', errors='ignore')}")
+
+desktop_type.required_capabilities = ["CAP_WAYLAND_CONTROL"]
 
 def desktop_keypress(key: str) -> str:
-    """Mock presses a key on the real desktop."""
-    return f"Pressed key on real desktop: {key}"
+    """Presses a key on the real desktop using wtype."""
+    _verify_wayland_proxy()
+    try:
+        subprocess.run(["wtype", "-k", key], check=True, capture_output=True)
+        return f"Pressed key on real desktop: {key}"
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"wtype failed: {e.stderr.decode('utf-8', errors='ignore')}")
+
+desktop_keypress.required_capabilities = ["CAP_WAYLAND_CONTROL"]

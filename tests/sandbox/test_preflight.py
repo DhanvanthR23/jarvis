@@ -18,7 +18,7 @@ class TestPreflight(unittest.TestCase):
         result = run_preflight()
         expected = {
             'bwrap_available', 'user_namespace', 'pid_namespace',
-            'network_namespace', 'full_isolation', 'unix_socket',
+            'network_namespace', 'full_isolation', 'unix_socket', 'uinput_blocked'
         }
         self.assertEqual(set(result.checks.keys()), expected)
 

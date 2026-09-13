@@ -15,6 +15,8 @@ files_write = "approval"
 service_restart = "approval"
 package_install = "approval"
 memory_write = "approval"
+memory_read = "safe"
+memory_search = "safe"
 
 arbitrary_shell = "disabled"
 sudo = "disabled"
@@ -29,19 +31,22 @@ desktop_type = "approval"
 desktop_keypress = "approval"
 
 # G22 Real Desktop Tools
-desktop_observe = "safe"
+desktop_observe = "approval"
+CAP_WAYLAND_OBSERVE = "approval"
+CAP_WAYLAND_CONTROL = "approval"
 real_desktop_focus = "approval"
 real_desktop_click = "approval"
 real_desktop_type = "approval"
 real_desktop_keypress = "approval"
 
 # G23 Browser Tools
-browser_navigate = "safe"
+browser_navigate = "approval"
 browser_read = "safe"
-browser_type = "safe"
+browser_type = "approval"
 browser_click = "approval"
 browser_download = "approval"
 browser_upload = "approval"
+browser_search = "safe"
 
 [roles.orchestrator]
 description = "High-level decomposition and task coordination"
@@ -62,7 +67,11 @@ allowed_capabilities = [
     "processes_list",
     "logs_search",
     "files_read",
-    "command_execute"
+    "command_execute",
+    "memory_write",
+    "memory_read",
+    "memory_search",
+    "browser_search"
 ]
 max_execution_time = 45
 can_mutate = false
@@ -86,7 +95,33 @@ allowed_capabilities = [
     "browser_type",
     "browser_click",
     "browser_download",
-    "browser_upload"
+    "browser_upload",
+    "browser_search"
 ]
 max_execution_time = 60
-can_mutate = false
+can_mutate = true
+approval_required = true
+
+[roles.gui_automation]
+description = "Sandboxed desktop interaction and real wayland observation"
+allowed_capabilities = [
+    "desktop_screenshot",
+    "desktop_windows",
+    "desktop_focus",
+    "desktop_click",
+    "desktop_type",
+    "desktop_keypress",
+    "desktop_observe",
+    "CAP_WAYLAND_OBSERVE",
+    "CAP_WAYLAND_CONTROL",
+    "real_desktop_focus",
+    "real_desktop_click",
+    "real_desktop_type",
+    "real_desktop_keypress"
+]
+max_execution_time = 120
+can_mutate = true
+approval_required = true
+
+[config]
+gui_gpu_accel = false

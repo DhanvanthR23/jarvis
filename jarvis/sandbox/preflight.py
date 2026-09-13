@@ -27,7 +27,7 @@ class PreflightResult:
     checks: dict[str, CheckResult]
 
 
-def _run_bwrap_test(args: list[str], description: str) -> CheckResult:
+def _run_bwrap_test(args: list[str], description: str, command: list[str] | None = None) -> CheckResult:
     """Run a bwrap test command and return a CheckResult.
 
     Uses --unshare-all with a minimal filesystem to test namespace support.
@@ -46,8 +46,11 @@ def _run_bwrap_test(args: list[str], description: str) -> CheckResult:
             fs_args += ['--ro-bind', path, path]
 
     fs_args += ['--proc', '/proc', '--dev', '/dev', '--tmpfs', '/tmp']
+    
+    if command is None:
+        command = ['/usr/bin/true']
 
-    cmd = ['bwrap'] + args + fs_args + ['--', '/usr/bin/true']
+    cmd = ['bwrap'] + args + fs_args + ['--'] + command
     try:
         res = subprocess.run(cmd, capture_output=True, timeout=10)
         if res.returncode == 0:
@@ -129,16 +132,24 @@ def run_preflight() -> PreflightResult:
         checks['unix_socket'] = CheckResult(
             'unix_socket', False, str(e))
 
+    # 7. /dev/uinput is strictly blocked
+    # In bwrap with --dev /dev, /dev/uinput should NOT exist. We fail if it DOES exist.
+    checks['uinput_blocked'] = _run_bwrap_test(
+        ['--unshare-all'], 'uinput_blocked', command=['/usr/bin/test', '!', '-e', '/dev/uinput']
+    )
+
     all_passed = all(c.passed for c in checks.values())
 
     result = PreflightResult(passed=all_passed, checks=checks)
 
-    # Print clear output
-    print(f'Sandbox prerequisites: {"PASS" if all_passed else "FAIL"}')
+    # Log results via logging (not print) — visible only when verbose/debug
+    import logging
+    logger = logging.getLogger('jarvis.sandbox.preflight')
+    logger.debug('Sandbox prerequisites: %s', 'PASS' if all_passed else 'FAIL')
     for name, check in checks.items():
         status = 'PASS' if check.passed else 'FAIL'
-        print(f'  {name}: {status} — {check.detail}')
+        logger.debug('  %s: %s — %s', name, status, check.detail)
     if not all_passed:
-        print('AGY startup disabled.')
+        logger.warning('Sandbox preflight FAILED — AGY startup disabled.')
 
     return result

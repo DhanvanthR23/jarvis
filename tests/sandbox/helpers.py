@@ -7,9 +7,15 @@ import tempfile
 import unittest
 
 from jarvis.sandbox.launcher import SandboxConfig, build_bwrap_command
+from jarvis.sandbox.preflight import run_preflight
+
+def _sandbox_available() -> bool:
+    """Return whether this host can run real bubblewrap integration tests."""
+    return shutil.which('bwrap') is not None and run_preflight().passed
+
 
 REQUIRE_BWRAP = unittest.skipUnless(
-    shutil.which('bwrap'), 'bwrap not available',
+    _sandbox_available(), 'usable bubblewrap namespaces and Unix sockets are required',
 )
 
 

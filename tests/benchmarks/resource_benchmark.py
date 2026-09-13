@@ -3,7 +3,7 @@
 
 Measures resource usage across three stages:
   Stage A: Jarvis idle baseline
-  Stage B: Jarvis + candidate STT (vosk)
+  Stage B: Jarvis + candidate STT (faster-whisper)
   Stage C: Jarvis + STT + TTS + AGY + MCP (simulated full load)
 
 Reports: peak RAM, sustained RAM, CPU, latency.
@@ -71,22 +71,20 @@ def stage_a():
     return results
 
 def stage_b(test_wav):
-    """Stage B: Jarvis + candidate STT (vosk small model)."""
-    print("\n=== Stage B: Jarvis + Vosk STT ===")
+    """Stage B: Jarvis + candidate STT (faster-whisper base.en)."""
+    print("\n=== Stage B: Jarvis + Faster-Whisper STT ===")
     sys_mem_before = get_system_memory()
     
     t0 = time.monotonic()
-    from vosk import KaldiRecognizer, Model
+    from jarvis.voice.stt.faster_whisper import FasterWhisperSTT
     
     # Download small model if needed
-    model_path = os.path.expanduser("~/.cache/vosk/vosk-model-small-en-us-0.15")
-    if not os.path.exists(model_path):
-        print("  Downloading vosk small model...")
-        from vosk import Model
-        # vosk auto-downloads if we just create Model with the name
-        model = Model(model_name="vosk-model-small-en-us-0.15")
-    else:
-        model = Model(model_path)
+    stt = FasterWhisperSTT(model_size="base.en", compute_type="int8")
+    if not stt.is_available():
+        print("  faster-whisper not available")
+        return {}
+    
+    stt._get_model()
     t1 = time.monotonic()
     model_load_ms = (t1 - t0) * 1000
     
@@ -94,16 +92,11 @@ def stage_b(test_wav):
     get_system_memory()
     
     # Transcribe test audio
-    rec = KaldiRecognizer(model, 16000)
-    with wave.open(test_wav, 'rb') as wf:
-        t2 = time.monotonic()
-        while True:
-            data = wf.readframes(4000)
-            if len(data) == 0:
-                break
-            rec.AcceptWaveform(data)
-        json.loads(rec.FinalResult())
-        t3 = time.monotonic()
+    with open(test_wav, 'rb') as f:
+        audio_data = f.read()
+    t2 = time.monotonic()
+    stt.transcribe(audio_data)
+    t3 = time.monotonic()
     
     transcription_ms = (t3 - t2) * 1000
     proc_rss_after = get_memory_mb()

@@ -32,6 +32,8 @@ class SandboxConfig:
     read_only_paths: list[str | tuple[str, str]] = dataclasses.field(default_factory=list)
     writable_paths: list[str | tuple[str, str]] = dataclasses.field(default_factory=list)
     env: dict[str, str] = dataclasses.field(default_factory=dict)
+    enable_gpu: bool = False
+    compositor: str | None = None
 
 
 # Minimal, controlled environment for the sandbox.
@@ -40,6 +42,7 @@ DEFAULT_ENV: dict[str, str] = {
     'PATH': '/usr/bin:/bin',
     'LANG': 'C.UTF-8',
     'TERM': 'dumb',
+    'XDG_RUNTIME_DIR': '/run',
 }
 
 # Environment variables that must NEVER be inherited by the sandbox.
@@ -103,6 +106,9 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
         '--tmpfs', '/run',
     ]
 
+    if config.enable_gpu and os.path.exists('/dev/dri/renderD128'):
+        bwrap_cmd += ['--dev-bind', '/dev/dri/renderD128', '/dev/dri/renderD128']
+
     # Agent home directory
     bwrap_cmd += ['--dir', '/home/agent']
 
@@ -118,9 +124,13 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     for item in config.writable_paths:
         if isinstance(item, tuple) and len(item) == 2:
             src, dst = item
+            if src == '/dev/uinput' or dst == '/dev/uinput':
+                raise SandboxError("Mounting /dev/uinput is strictly blocked.")
             if os.path.exists(src):
                 bwrap_cmd += ['--bind', src, dst]
         elif isinstance(item, str):
+            if item == '/dev/uinput':
+                raise SandboxError("Mounting /dev/uinput is strictly blocked.")
             if os.path.exists(item):
                 bwrap_cmd += ['--bind', item, item]
 
@@ -128,9 +138,13 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
     for item in config.read_only_paths:
         if isinstance(item, tuple) and len(item) == 2:
             src, dst = item
+            if src == '/dev/uinput' or dst == '/dev/uinput':
+                raise SandboxError("Mounting /dev/uinput is strictly blocked.")
             if os.path.exists(src):
                 bwrap_cmd += ['--ro-bind', src, dst]
         elif isinstance(item, str):
+            if item == '/dev/uinput':
+                raise SandboxError("Mounting /dev/uinput is strictly blocked.")
             if os.path.exists(item):
                 bwrap_cmd += ['--ro-bind', item, item]
 
@@ -147,6 +161,17 @@ def build_bwrap_command(config: SandboxConfig, command: list[str]) -> list[str]:
 
     # Separator and command
     bwrap_cmd += ['--']
+    
+    if config.compositor == 'cage':
+        bwrap_cmd += [
+            'env',
+            'WLR_BACKENDS=headless',
+            'WLR_LIBINPUT_NO_DEVICES=1',
+            'cage',
+            '-d',
+            '--'
+        ]
+
     bwrap_cmd += command
 
     return bwrap_cmd

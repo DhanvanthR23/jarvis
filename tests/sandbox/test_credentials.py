@@ -51,7 +51,7 @@ class TestCredentialIsolation(unittest.TestCase):
                 key, _, value = line.partition('=')
                 env_vars[key] = value
         # Should only have our controlled env vars (+ PWD which sh sets)
-        expected_keys = {'HOME', 'PATH', 'LANG', 'TERM', 'PWD'}
+        expected_keys = {'HOME', 'PATH', 'LANG', 'TERM', 'PWD', 'XDG_RUNTIME_DIR'}
         actual_keys = set(env_vars.keys())
         unexpected = actual_keys - expected_keys
         self.assertEqual(unexpected, set(),

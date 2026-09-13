@@ -6,13 +6,15 @@ Jarvis is a secure, multi-agent orchestration architecture designed to run untru
 
 ## Core Features
 
-- **Multi-Agent Orchestration (G26)**: Hub-and-spoke architecture where specialized agents (e.g., orchestrator, system diagnostics, system maintenance, browser research) run in completely isolated sandboxes with zero direct agent-to-agent IPC.
+- **Multi-Agent Orchestration (G26)**: Hub-and-spoke architecture where specialized roles (e.g., orchestrator, system diagnostics, system maintenance, browser research) run in isolated sandboxes.
+- **Dynamic Role Auto-Switching**: The Controller automatically and seamlessly switches the active role during execution whenever a requested capability requires a different role.
+- **Persistent Conversational Memory**: A SQLite-backed `MemoryStore` allows the agent to read, write, and search persistent facts across sessions.
 - **Strict Sandboxing**: Utilizes `bwrap` (Bubblewrap) to enforce strong isolation. Agents have no host credentials, controlled network access required for AGY, and minimal read-only filesystems.
 - **Policy Engine**: Role-based access control (RBAC) enforced by a verified `capabilities.toml` manifest. Tools are gated by risk tiers (`safe`, `approval`, `disabled`).
 - **Audit Logging & Tracing**: Distributed execution tracing (trace, span, parent span) backed by an immutable SQLite audit log and external anchor.
 - **Output Security Filter**: Scans all inter-agent messages and user-facing output for secrets (e.g., AWS keys, GitHub tokens) to prevent leaks.
 - **Automation Pipeline (G25)**: Supports running capability-bound background jobs with explicit authorization separation from interactive sessions.
-- **Local Voice Interface (G27)**: High-accuracy, entirely local Speech-to-Text and Text-to-Speech using `faster-whisper` and `Kokoro ONNX` with conversational text sanitization.
+- **Voice Interface (G27/G28)**: High-accuracy Speech-to-Text (`faster-whisper`), fast local fallback TTS (`piper-tts`), and a Cloud TTS proxy daemon (`edge-tts`) for high-quality voice synthesis with zero network egress permitted from the agent sandbox.
 
 ## Architecture
 
@@ -20,8 +22,9 @@ The system centers around the `JarvisController` which coordinates:
 1. **Agent Sandbox**: The isolated environment running the LLM backend.
 2. **MCP Server**: The socket bridge over which tools are invoked.
 3. **Policy Engine**: Verifies if the active role is permitted to run the requested tool.
-4. **Approval Cache**: Prompts the user for confirmation on mutating actions.
-5. **Audit Logger**: Cryptographically chains execution events.
+4. **Memory Store**: Persists conversational state and facts.
+5. **Approval Cache**: Prompts the user for confirmation on mutating actions.
+6. **Audit Logger**: Cryptographically chains execution events.
 
 ## Usage
 
@@ -33,7 +36,7 @@ To start the interactive REPL:
 
 To run an interactive Voice Session:
 ```bash
-./jarvis.sh --voice --voice-engine=faster-whisper
+./jarvis.sh --voice --stt-engine whisper --tts-engine cloud
 ```
 
 To run a one-shot query:

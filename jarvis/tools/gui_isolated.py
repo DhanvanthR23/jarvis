@@ -1,25 +1,46 @@
-
+import subprocess
+import tempfile
+import os
 
 def desktop_screenshot() -> str:
-    """Takes a mock screenshot of the isolated desktop."""
-    return "Took a screenshot of the isolated desktop"
+    """Captures a screenshot of the sandboxed GUI using grim."""
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    
+    try:
+        subprocess.run(["grim", path], check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to capture screenshot: {e.stderr.decode('utf-8')}")
+        
+    return path
 
 def desktop_windows() -> list[str]:
-    """Lists mock windows in the isolated desktop."""
-    return ["Mock Window 1", "Mock Window 2"]
+    raise NotImplementedError("To be implemented in G21.2")
 
 def desktop_focus(window_id: str) -> str:
-    """Mock focuses on a specific window in the isolated desktop."""
-    return f"Focused on window {window_id}"
+    raise NotImplementedError("To be implemented in G21.2")
 
 def desktop_click(x: int, y: int) -> str:
-    """Mock clicks on the isolated desktop."""
-    return f"Clicked at ({x}, {y})"
+    """Clicks on the sandboxed desktop using wlrctl."""
+    try:
+        subprocess.run(["wlrctl", "pointer", "move", str(x), str(y)], check=True, capture_output=True)
+        subprocess.run(["wlrctl", "pointer", "click", "left"], check=True, capture_output=True)
+        return f"Clicked isolated desktop at ({x}, {y})"
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to click: {e.stderr.decode('utf-8', errors='ignore')}")
 
 def desktop_type(text: str) -> str:
-    """Mock types text on the isolated desktop."""
-    return f"Typed: {text}"
+    """Types text on the sandboxed desktop using wtype."""
+    try:
+        subprocess.run(["wtype", text], check=True, capture_output=True)
+        return f"Typed on isolated desktop: {text}"
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to type: {e.stderr.decode('utf-8', errors='ignore')}")
 
 def desktop_keypress(key: str) -> str:
-    """Mock presses a key on the isolated desktop."""
-    return f"Pressed key: {key}"
+    """Presses a key on the sandboxed desktop using wtype."""
+    try:
+        subprocess.run(["wtype", "-k", key], check=True, capture_output=True)
+        return f"Pressed key on isolated desktop: {key}"
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Failed to press key: {e.stderr.decode('utf-8', errors='ignore')}")

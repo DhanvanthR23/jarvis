@@ -1,4 +1,3 @@
-import tempfile
 """Tests for AGYBackend adapter (G15/G16)."""
 
 import os
@@ -16,53 +15,37 @@ class TestAGYBackend(unittest.TestCase):
     def setUp(self):
         self.workspace = '/tmp/jarvis_test_ws_agy'
         os.makedirs(self.workspace, exist_ok=True)
-        # Mock shutil.which so it doesn't fail if agy is missing in the test environment
+        self.start_patcher = patch('jarvis.agent.agy.MCPServer.start')
+        self.stop_patcher = patch('jarvis.agent.agy.MCPServer.stop')
+        self.start_patcher.start()
+        self.stop_patcher.start()
+        # The backend is unit-tested here; socket behavior belongs to MCP tests.
         with patch('jarvis.agent.agy.shutil.which', return_value='/fake/bin/agy'):
             self.backend = AGYBackend(self.workspace)
 
     def tearDown(self):
+        self.backend.close()
+        self.start_patcher.stop()
+        self.stop_patcher.stop()
         shutil.rmtree(self.workspace, ignore_errors=True)
 
     def test_session_directory_cleanup_on_success(self):
-        """Regression assertion: no session-state directory remains after normal execution."""
-        
-        # Track the created directory
-        created_dirs = []
-        original_mkdtemp = tempfile.mkdtemp
-        
-        def mock_mkdtemp(*args, **kwargs):
-            d = original_mkdtemp(*args, **kwargs)
-            created_dirs.append(d)
-            return d
-            
-        with patch('jarvis.agent.agy.tempfile.mkdtemp', side_effect=mock_mkdtemp):
-            with patch('jarvis.agent.agy.SecureLauncher.launch') as mock_launch:
-                mock_launch.return_value = MagicMock(stdout='Hello', returncode=0)
-                
-                result = self.backend.process('hi', lambda n, a: {})
-                self.assertEqual(result, 'Hello')
-                
-        self.assertEqual(len(created_dirs), 1)
-        self.assertFalse(os.path.exists(created_dirs[0]), "Session directory was not cleaned up!")
+        """The persistent session survives a request and is explicitly cleaned up."""
+        session_dir = self.backend.session_dir
+        with patch('jarvis.agent.agy.SecureLauncher.launch') as mock_launch:
+            mock_launch.return_value = MagicMock(stdout='Hello', returncode=0)
+            self.assertEqual(self.backend.process('hi', lambda n, a: {}), 'Hello')
+        self.assertTrue(os.path.exists(session_dir))
+        self.backend.close()
+        self.assertFalse(os.path.exists(session_dir))
 
     def test_session_directory_cleanup_on_error(self):
-        """Regression assertion: no session-state directory remains after crash/error."""
-        
-        created_dirs = []
-        original_mkdtemp = tempfile.mkdtemp
-        
-        def mock_mkdtemp(*args, **kwargs):
-            d = original_mkdtemp(*args, **kwargs)
-            created_dirs.append(d)
-            return d
-            
-        with patch('jarvis.agent.agy.tempfile.mkdtemp', side_effect=mock_mkdtemp):
-            with patch('jarvis.agent.agy.SecureLauncher.launch', side_effect=SandboxError("Launch failed")):
-                result = self.backend.process('hi', lambda n, a: {})
-                self.assertTrue(result.startswith("Sandbox error:"))
-                
-        self.assertEqual(len(created_dirs), 1)
-        self.assertFalse(os.path.exists(created_dirs[0]), "Session directory was not cleaned up on error!")
+        """An execution error does not leak state once the backend is closed."""
+        session_dir = self.backend.session_dir
+        with patch('jarvis.agent.agy.SecureLauncher.launch', side_effect=SandboxError("Launch failed")):
+            self.assertTrue(self.backend.process('hi', lambda n, a: {}).startswith("Sandbox error:"))
+        self.backend.close()
+        self.assertFalse(os.path.exists(session_dir))
 
     def test_sandbox_mounts_correctly(self):
         """Verify the exact RO/RW filesystem assumptions for AGY."""
