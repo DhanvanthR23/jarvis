@@ -127,7 +127,6 @@ def main():
     parser.add_argument("--stt-engine", choices=["whisper"], default="whisper", help="STT engine to use (defaults to whisper)")
     parser.add_argument("--tts-engine", choices=["piper", "cloud"], default="piper", help="TTS engine to use (defaults to piper)")
     parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
-    parser.add_argument("--role", default="system_diagnostics", help="Capability role to assume (defaults to system_diagnostics)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed logs about tool arguments, policy reasons, and outputs")
     args = parser.parse_args()
 
@@ -141,7 +140,7 @@ def main():
             backend = "agy"
 
     try:
-        controller = get_controller(backend_name=backend, active_role=args.role, verbose=args.verbose)
+        controller = get_controller(backend_name=backend, active_role="system_diagnostics", verbose=args.verbose)
     except Exception as e:
         print(f"Failed to initialize controller: {e}", file=sys.stderr)
         sys.exit(1)

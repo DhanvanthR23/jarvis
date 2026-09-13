@@ -315,7 +315,6 @@ class JarvisController:
         # Wayland Visual Indicator (G22 / Invariant V)
         if tool_name in ["desktop_observe", "real_desktop_focus", "real_desktop_click", "real_desktop_type", "real_desktop_keypress"]:
             import json
-            import os
             import subprocess
             indicator_path = "/tmp/jarvis_wayland_indicator.json"
             
@@ -336,7 +335,7 @@ class JarvisController:
                 pass
 
         if self.verbose:
-            print(f"[VERBOSE] Invoking underlying tool code...")
+            print("[VERBOSE] Invoking underlying tool code...")
             
         # Execute the tool
         tool_result = self._call_tool(tool_name, args)

@@ -23,7 +23,6 @@ import tempfile
 import threading
 import time
 import wave
-from pathlib import Path
 
 logger = logging.getLogger("jarvis.voice.proxy")
 

@@ -8,7 +8,6 @@ Measures resource usage across three stages:
 
 Reports: peak RAM, sustained RAM, CPU, latency.
 """
-import json
 import os
 import resource
 import sys

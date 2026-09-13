@@ -15,8 +15,6 @@ import logging
 import os
 import socket
 import struct
-import tempfile
-import threading
 import time
 import wave
 
@@ -246,7 +244,6 @@ class TestFallbackLogging:
         time.sleep(0.2)
 
         # Capture log output
-        log_handler = logging.handlers_if_needed = []
         logger = logging.getLogger("jarvis.voice.proxy")
         handler = logging.StreamHandler(io.StringIO())
         handler.setLevel(logging.WARNING)

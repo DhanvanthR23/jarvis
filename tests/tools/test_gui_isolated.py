@@ -1,7 +1,5 @@
 import tempfile
 import os
-import subprocess
-import pytest
 from jarvis.sandbox.launcher import SandboxConfig, launch_sandboxed
 from tests.sandbox.helpers import REQUIRE_BWRAP
 

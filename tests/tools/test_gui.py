@@ -13,7 +13,6 @@ from jarvis.tools.gui_isolated import (
     desktop_keypress as isolated_keypress,
 )
 from jarvis.tools.gui_isolated import (
-    desktop_screenshot,
     desktop_windows,
 )
 from jarvis.tools.gui_isolated import (
@@ -27,9 +26,6 @@ from jarvis.tools.gui_real import (
 )
 from jarvis.tools.gui_real import (
     desktop_keypress as real_keypress,
-)
-from jarvis.tools.gui_real import (
-    desktop_observe,
 )
 from jarvis.tools.gui_real import (
     desktop_type as real_type,

@@ -1,5 +1,4 @@
 import os
-import time
 import pytest
 from unittest.mock import patch, MagicMock
 

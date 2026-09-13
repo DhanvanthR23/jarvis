@@ -54,8 +54,6 @@ class PiperTTS(TextToSpeech):
 
         self._ensure_model()
         
-        import io
-        import wave
         
         buf = io.BytesIO()
         with wave.open(buf, 'wb') as wf:
