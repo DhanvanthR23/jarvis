@@ -140,39 +140,20 @@ def cleanup_browser(playwright, browser, page=None):
 
 def browser_search(query: str):
     """
-    Performs a Google search for the query and returns the top results.
-    Creates and tears down its own browser instance.
+    Performs a web search for the query and returns the top results.
     """
-    playwright = None
-    browser = None
-    page = None
     try:
-        playwright, browser = launch_browser()
-        page = browser.new_page()
-        import urllib.parse
-        encoded_query = urllib.parse.quote(query)
-        page.goto(f"https://html.duckduckgo.com/html/?q={encoded_query}")
-        
-        results = page.evaluate('''() => {
-            const items = document.querySelectorAll('.result');
-            const data = [];
-            for (let i = 0; i < Math.min(items.length, 5); i++) {
-                const titleEl = items[i].querySelector('.result__title');
-                const snippetEl = items[i].querySelector('.result__snippet');
-                const urlEl = items[i].querySelector('.result__url');
-                if (titleEl && urlEl) {
-                    data.push({
-                        title: titleEl.innerText,
-                        snippet: snippetEl ? snippetEl.innerText : '',
-                        url: urlEl.getAttribute('href') || urlEl.innerText
-                    });
-                }
-            }
-            return data;
-        }''')
-        
-        return results
+        from ddgs import DDGS
+        with DDGS() as ddgs:
+            results = []
+            for r in ddgs.text(query, max_results=5):
+                results.append({
+                    "title": r.get("title", ""),
+                    "snippet": r.get("body", ""),
+                    "url": r.get("href", "")
+                })
+            return results
+    except ImportError:
+        return "Search failed: ddgs library is not installed. Please install it with 'pip install ddgs'."
     except Exception as e:
         return f"Browser search failed: {e}"
-    finally:
-        cleanup_browser(playwright, browser, page)

@@ -147,6 +147,10 @@ def main():
 
     if args.voice:
         try:
+            from rich.console import Console
+            from rich.panel import Panel
+            console = Console()
+            
             from jarvis.voice.audio import MockAudioCapture, MockAudioPlayback
             from jarvis.voice.runtime import VoiceRuntime
             from jarvis.voice.state import VoiceState
@@ -157,9 +161,9 @@ def main():
                 from jarvis.voice.audio_real import PyAudioCapture, PyAudioPlayback
                 capture = PyAudioCapture()
                 playback = PyAudioPlayback()
-                print("  Using real PyAudio for microphone and speakers")
+                console.print("[green]  Using real PyAudio for microphone and speakers[/green]")
             except ImportError:
-                print("  PyAudio not installed (pip install PyAudio). Using Mock audio.", file=sys.stderr)
+                console.print("[yellow]  PyAudio not installed (pip install PyAudio). Using Mock audio.[/yellow]")
                 capture = MockAudioCapture()
                 playback = MockAudioPlayback()
 
@@ -174,10 +178,10 @@ def main():
                 stt = FasterWhisperSTT(model_size=model_size, compute_type="int8")
                 
                 if not stt.is_available():
-                    print("  faster-whisper dependencies missing (pip install faster-whisper).", file=sys.stderr)
+                    console.print("[red]  faster-whisper dependencies missing (pip install faster-whisper).[/red]")
                     sys.exit(1)
                 else:
-                    print(f" Using Faster-Whisper STT (Model: {model_size})")
+                    console.print(f"[cyan] Using Faster-Whisper STT (Model: {model_size})[/cyan]")
 
             # --- TTS Setup ---
             if tts_engine == 'cloud':
@@ -193,36 +197,58 @@ def main():
                     piper_tts=piper_fallback,
                 )
                 tts_daemon.start()
-                print(f" TTS proxy daemon started on {tts_daemon.socket_path}")
+                console.print(f"[cyan] TTS proxy daemon started on {tts_daemon.socket_path}[/cyan]")
 
                 # Create the agent-side client (IPC-only, no network)
                 tts = CloudTTS(playback, socket_path=tts_daemon.socket_path)
 
                 if not tts.is_available():
-                    print("  Cloud TTS daemon not reachable. Falling back to Piper.", file=sys.stderr)
+                    console.print("[yellow]  Cloud TTS daemon not reachable. Falling back to Piper.[/yellow]")
                     tts_daemon.stop()
                     tts = piper_fallback
                 else:
-                    print(" Using Cloud TTS (Edge TTS via host-side proxy)")
+                    console.print("[cyan] Using Cloud TTS (Edge TTS via host-side proxy)[/cyan]")
             else:
                 tts = PiperTTS(playback)
-                print(" Using Piper TTS")
+                console.print("[cyan] Using Piper TTS[/cyan]")
             
             runtime = VoiceRuntime(capture=capture, playback=playback, stt=stt, tts=tts)
             
             # Connect the voice runtime to the controller
             def handle_transcription(transcript):
                 if transcript.text:
-                    print(f"\n  You said: {transcript.text}")
-                    print("  Jarvis is thinking...")
+                    console.print(f"\n[bold blue]  You said:[/bold blue] {transcript.text}")
+                    console.print("[dim]  Jarvis is thinking...[/dim]")
                     response = controller.process_request(transcript.text, is_voice=True, transcript=transcript)
                     import re
                     clean_text = re.sub(r'[*_#`|~\[\]>]', '', response)
                     clean_text = re.sub(r'\n+', ' ', clean_text).strip()
-                    print(f"󰚩 Jarvis: {clean_text}")
-                    runtime.speak(clean_text)
+                    console.print(Panel(clean_text, title="󰚩 Jarvis", border_style="green"))
+                    
+                    import threading
+                    import select
+                    import sys
+                    
+                    speak_thread = threading.Thread(target=runtime.speak, args=(clean_text,))
+                    speak_thread.start()
+                    
+                    console.print("[dim]󰚩 Jarvis is speaking... (Press Enter to interrupt)[/dim]")
+                    
+                    interrupted = False
+                    while speak_thread.is_alive():
+                        r, _, _ = select.select([sys.stdin], [], [], 0.1)
+                        if r:
+                            sys.stdin.readline()
+                            interrupted = True
+                            break
+                            
+                    if interrupted:
+                        runtime.interrupt()
+                        console.print("[bold yellow]🛑 Interrupted![/bold yellow]")
+                        speak_thread.join()
+                        
                 else:
-                    print("\n(No speech detected)")
+                    console.print("\n[dim](No speech detected)[/dim]")
                     runtime.state_machine.transition(VoiceState.IDLE)
 
             runtime.on_transcription = handle_transcription
@@ -230,19 +256,20 @@ def main():
             # Interactive voice loop
             while True:
                 try:
-                    runtime.start_listening()
-                    action = input("\n Listening... (Press Enter to stop, or type 'q' to quit)\n")
+                    if runtime.state != VoiceState.LISTENING:
+                        runtime.start_listening()
+                    action = console.input("\n[bold red] Listening... (Press Enter to stop, or type 'q' to quit)[/bold red]\n")
                     if action.strip().lower() in ('q', 'quit', 'exit'):
-                        print("\nGoodbye!")
+                        console.print("\n[bold]Goodbye![/bold]")
                         # Ensure stream is stopped
                         if runtime.capture._recording:
                             runtime.capture.stop()
                         break
                     
-                    print(" Processing audio...")
+                    console.print("[dim] Processing audio...[/dim]")
                     runtime.stop_listening()
                 except KeyboardInterrupt:
-                    print("\n\nGoodbye!")
+                    console.print("\n\n[bold]Goodbye![/bold]")
                     if runtime.capture._recording:
                         runtime.capture.stop()
                     break

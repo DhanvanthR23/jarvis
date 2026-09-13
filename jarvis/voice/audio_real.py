@@ -76,6 +76,7 @@ class PyAudioPlayback(AudioPlayback):
         with suppress_alsa_warnings():
             self.p = pyaudio.PyAudio()
         self.stream = None
+        self._playing = False
 
     def is_available(self):
         return True
@@ -83,21 +84,35 @@ class PyAudioPlayback(AudioPlayback):
     def play(self, audio: bytes):
         import io
         import wave
+        self._playing = True
         with wave.open(io.BytesIO(audio), 'rb') as wf:
             self.stream = self.p.open(format=self.p.get_format_from_width(wf.getsampwidth()),
                                       channels=wf.getnchannels(),
                                       rate=wf.getframerate(),
                                       output=True)
             data = wf.readframes(1024)
-            while data:
-                self.stream.write(data)
+            while data and self._playing:
+                try:
+                    self.stream.write(data)
+                except Exception:
+                    break
                 data = wf.readframes(1024)
-            self.stream.stop_stream()
-            self.stream.close()
-            self.stream = None
+                
+            if self.stream:
+                try:
+                    self.stream.stop_stream()
+                    self.stream.close()
+                except Exception:
+                    pass
+                self.stream = None
+        self._playing = False
 
     def stop(self):
+        self._playing = False
         if self.stream:
-            self.stream.stop_stream()
-            self.stream.close()
+            try:
+                self.stream.stop_stream()
+                self.stream.close()
+            except Exception:
+                pass
             self.stream = None
