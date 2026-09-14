@@ -109,10 +109,3 @@ class PyAudioPlayback(AudioPlayback):
 
     def stop(self):
         self._playing = False
-        if self.stream:
-            try:
-                self.stream.stop_stream()
-                self.stream.close()
-            except Exception:
-                pass
-            self.stream = None

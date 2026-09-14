@@ -64,13 +64,14 @@ class JarvisController:
         properties = {}
         required = []
         for param_name, param in sig.parameters.items():
-            if param_name == 'kwargs': continue
+            if param_name == 'kwargs':
+                continue
             param_type = "string"
-            if param.annotation == int:
+            if param.annotation is int:
                 param_type = "integer"
-            elif param.annotation == bool:
+            elif param.annotation is bool:
                 param_type = "boolean"
-            elif param.annotation == list:
+            elif param.annotation is list:
                 param_type = "array"
             
             properties[param_name] = {"type": param_type, "description": f"{param_name}"}
