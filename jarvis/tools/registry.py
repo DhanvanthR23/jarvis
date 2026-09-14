@@ -48,10 +48,10 @@ def register_readonly_tools(controller: JarvisController):
 
     # G23 Browser Tools
     from jarvis.tools import browser
-    controller.register_tool('browser_navigate', browser.browser_navigate, 'Navigate to a URL')
-    controller.register_tool('browser_read', browser.browser_read, 'Read page content')
-    controller.register_tool('browser_click', browser.browser_click, 'Click a browser element')
-    controller.register_tool('browser_type', browser.browser_type, 'Type into a browser element')
-    controller.register_tool('browser_download', browser.browser_download, 'Download a file from a URL')
-    controller.register_tool('browser_upload', browser.browser_upload, 'Upload a file via browser')
-    controller.register_tool('browser_search', browser.browser_search, 'Search the web for a query and return top results')
+    controller.register_tool('browser_navigate', browser.browser_navigate, 'Navigate the internal browser to a URL')
+    controller.register_tool('browser_read', browser.browser_read, 'Read page text and accessibility tree from the current internal browser page')
+    controller.register_tool('browser_click', browser.browser_click, 'Click a browser element via CSS selector in the internal browser')
+    controller.register_tool('browser_type', browser.browser_type, 'Type text into a browser element in the internal browser')
+    controller.register_tool('browser_download', browser.browser_download, 'Download a file from the internal browser')
+    controller.register_tool('browser_upload', browser.browser_upload, 'Upload a file via the internal browser')
+    controller.register_tool('browser_search', browser.browser_search, 'Search the web for a query and return top results. Use browser_navigate and browser_read on returned URLs to extract full up-to-date article text.')

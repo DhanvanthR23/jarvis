@@ -20,8 +20,32 @@ class MCPServer:
     def _ensure_socket_dir(self):
         os.makedirs(os.path.dirname(self.socket_path), exist_ok=True)
 
-    def register_tool(self, name: str, handler: Callable, description: str = ''):
-        self.tool_registry[name] = {"handler": handler, "description": description}
+    def register_tool(self, name: str, handler: Callable, description: str = '', input_schema: dict | None = None):
+        if input_schema is None:
+            import inspect
+            sig = inspect.signature(handler)
+            properties = {}
+            required = []
+            for param_name, param in sig.parameters.items():
+                if param_name == 'kwargs': continue
+                param_type = "string"
+                if param.annotation == int:
+                    param_type = "integer"
+                elif param.annotation == bool:
+                    param_type = "boolean"
+                elif param.annotation == list:
+                    param_type = "array"
+                
+                properties[param_name] = {"type": param_type, "description": f"{param_name}"}
+                if param.default == inspect.Parameter.empty:
+                    required.append(param_name)
+                    
+            input_schema = {
+                "type": "object",
+                "properties": properties,
+                "required": required
+            }
+        self.tool_registry[name] = {"handler": handler, "description": description, "inputSchema": input_schema}
 
     def _handle_request(self, request: dict) -> dict:
         method = request.get("method")
@@ -43,7 +67,7 @@ class MCPServer:
         elif method == "notifications/initialized":
             return None # Notifications don't need a response
         elif method == "tools/list":
-            return {"result": {"tools": [{"name": k, "description": v["description"], "inputSchema": {"type": "object", "properties": {}}} for k, v in self.tool_registry.items()]}}
+            return {"result": {"tools": [{"name": k, "description": v["description"], "inputSchema": v["inputSchema"]} for k, v in self.tool_registry.items()]}}
         elif method == "tools/call":
             tool_name = params.get("name")
             args = params.get("arguments", {}) # Note: MCP uses 'arguments', not 'args'

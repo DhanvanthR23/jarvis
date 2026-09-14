@@ -164,15 +164,24 @@ Good: "That needs your approval — it's outside what I'll do unprompted. Confir
 
         return session_dir
 
+    def register_tool(self, name: str, description: str, input_schema: dict | None = None):
+        """Queue a tool for registration with the MCP server."""
+        if not hasattr(self, '_tools_to_register'):
+            self._tools_to_register = []
+        self._tools_to_register.append((name, description, input_schema))
+
     def process(self, user_input: str, tool_callback: Callable[[str, dict], dict], timeout: int = 300) -> str:
         """Process a request by launching AGY in the sandbox."""
         if not self._mcp_tools_registered:
-            # For G15 testing, map a mock tool. We will expand this in G17.
-            self.mcp_server.register_tool(
-                'system_info', 
-                lambda **kwargs: tool_callback('system_info', kwargs), 
-                'Get system info'
-            )
+            # Register all queued tools dynamically
+            if hasattr(self, '_tools_to_register'):
+                for name, desc, input_schema in self._tools_to_register:
+                    self.mcp_server.register_tool(
+                        name, 
+                        (lambda n: lambda **kwargs: tool_callback(n, kwargs))(name),
+                        desc,
+                        input_schema
+                    )
             self._mcp_tools_registered = True
         
         if not hasattr(self, 'launcher'):

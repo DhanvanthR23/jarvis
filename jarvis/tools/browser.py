@@ -62,19 +62,37 @@ def launch_browser():
         raise BrowserSetupError(f"Failed to launch browser: {e}")
 
 
-def browser_navigate(browser, url: str):
+_playwright = None
+_browser = None
+_current_page = None
+
+def _ensure_browser():
+    global _playwright, _browser, _current_page
+    if not PLAYWRIGHT_AVAILABLE:
+        raise BrowserSetupError("Playwright is not installed.")
+    if _browser is None:
+        if not check_sandbox_support():
+            raise SandboxSupportError("Nested unprivileged user namespaces are required but not supported.")
+        _playwright = sync_playwright().start()
+        _browser = _playwright.chromium.launch(headless=True)
+    if _current_page is None or _current_page.is_closed():
+        _current_page = _browser.new_page()
+    return _current_page
+
+def browser_navigate(url: str):
     """
     Navigates to a URL. Opens a new page and goes to the URL.
-    Returns the new page.
+    Returns the page title.
     """
-    page = browser.new_page()
+    page = _ensure_browser()
     page.goto(url)
-    return page
+    return page.title()
 
-def browser_read(page):
+def browser_read():
     """
     Extracts the DOM inner text and accessibility tree from the current page.
     """
+    page = _ensure_browser()
     try:
         ax_tree = page.accessibility.snapshot()
     except Exception:
@@ -87,60 +105,73 @@ def browser_read(page):
         "accessibility_tree": ax_tree
     }
 
-def browser_type(page, selector: str, text: str):
+def browser_type(selector: str, text: str):
     """
     Types text into the specified selector on the page.
     """
+    page = _ensure_browser()
     page.fill(selector, text)
+    return f"Typed '{text}' into '{selector}'"
 
-def browser_click(page, selector: str):
+def browser_click(selector: str):
     """
     Clicks on the specified selector on the page.
     """
+    page = _ensure_browser()
     page.click(selector)
+    return f"Clicked '{selector}'"
 
-def browser_download(page, selector: str, download_path: str):
+def browser_download(selector: str, download_path: str):
     """
     Clicks a selector to initiate a download and saves it to download_path.
     """
     if not is_safe_path(download_path):
         raise ValueError(f"Path {download_path} is outside the allowed workspace.")
+    page = _ensure_browser()
     with page.expect_download() as download_info:
         page.click(selector)
     download = download_info.value
     download.save_as(download_path)
+    return f"Downloaded to '{download_path}'"
 
-def browser_upload(page, selector: str, upload_path: str):
+def browser_upload(selector: str, upload_path: str):
     """
     Uploads a file at upload_path to the specified input element.
     """
     if not is_safe_path(upload_path):
         raise ValueError(f"Path {upload_path} is outside the allowed workspace.")
+    page = _ensure_browser()
     page.set_input_files(selector, upload_path)
+    return f"Uploaded '{upload_path}' to '{selector}'"
 
-def cleanup_browser(playwright, browser, page=None):
+def cleanup_browser():
     """
     Cleans up browser instances properly to validate memory usage.
     """
-    if page:
+    global _playwright, _browser, _current_page
+    if _current_page:
         try:
-            page.close()
-        except Exception as e:
-            logger.error(f"Error closing page: {e}")
-    if browser:
+            _current_page.close()
+        except Exception:
+            pass
+        _current_page = None
+    if _browser:
         try:
-            browser.close()
-        except Exception as e:
-            logger.error(f"Error closing browser: {e}")
-    if playwright:
+            _browser.close()
+        except Exception:
+            pass
+        _browser = None
+    if _playwright:
         try:
-            playwright.stop()
-        except Exception as e:
-            logger.error(f"Error stopping playwright: {e}")
+            _playwright.stop()
+        except Exception:
+            pass
+        _playwright = None
 
 def browser_search(query: str):
     """
     Performs a web search for the query and returns the top results.
+    If you need detailed up-to-date info from one of the results, use browser_navigate and browser_read on its URL.
     """
     try:
         from ddgs import DDGS

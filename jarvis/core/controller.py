@@ -59,10 +59,37 @@ class JarvisController:
 
     def register_tool(self, name: str, handler, description: str = ''):
         """Register a tool handler."""
+        import inspect
+        sig = inspect.signature(handler)
+        properties = {}
+        required = []
+        for param_name, param in sig.parameters.items():
+            if param_name == 'kwargs': continue
+            param_type = "string"
+            if param.annotation == int:
+                param_type = "integer"
+            elif param.annotation == bool:
+                param_type = "boolean"
+            elif param.annotation == list:
+                param_type = "array"
+            
+            properties[param_name] = {"type": param_type, "description": f"{param_name}"}
+            if param.default == inspect.Parameter.empty:
+                required.append(param_name)
+                
+        input_schema = {
+            "type": "object",
+            "properties": properties,
+            "required": required
+        }
+        
         self.tool_registry[name] = {
             'handler': handler,
             'description': description,
+            'inputSchema': input_schema
         }
+        if hasattr(self.agent_backend, 'register_tool'):
+            self.agent_backend.register_tool(name, description, input_schema)
 
     def process_request(self, user_input: str, is_voice: bool = False, transcript=None) -> str:
         """Process a user request through the pipeline."""
