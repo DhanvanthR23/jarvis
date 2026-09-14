@@ -17,6 +17,7 @@ class PiperTTS(TextToSpeech):
         self._playback = playback
         self._available = False
         self._voice = None
+        self._stopped = False
         
         try:
             import piper
@@ -47,6 +48,7 @@ class PiperTTS(TextToSpeech):
 
     def speak(self, text: str) -> None:
         """Synthesize and play the text synchronously."""
+        self._stopped = False
         if not self._available:
             raise RuntimeError("Piper TTS is not available")
         if not self._playback.is_available():
@@ -62,9 +64,13 @@ class PiperTTS(TextToSpeech):
             
         wav_data = buf.getvalue()
         
+        if self._stopped:
+            return
+            
         # Play it synchronously (blocks until playback finishes)
         self._playback.play(wav_data)
 
     def stop(self) -> None:
         """Stop playback immediately."""
+        self._stopped = True
         self._playback.stop()

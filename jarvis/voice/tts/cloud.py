@@ -32,6 +32,7 @@ class CloudTTS(TextToSpeech):
         self._playback = playback
         self._socket_path = socket_path
         self._available = True  # Availability depends on daemon being up
+        self._stopped = False
 
     def is_available(self) -> bool:
         """Check if the proxy daemon socket exists and is connectable."""
@@ -59,6 +60,7 @@ class CloudTTS(TextToSpeech):
 
         This method never makes network calls itself.
         """
+        self._stopped = False
         if not text.strip():
             return
 
@@ -67,13 +69,18 @@ class CloudTTS(TextToSpeech):
 
         try:
             wav_data = self._request_synthesis(text)
+            if self._stopped:
+                return
             self._playback.play(wav_data)
         except Exception as exc:
+            import logging
+            logger = logging.getLogger(__name__)
             logger.error("CloudTTS.speak failed: %s", exc)
             raise
 
     def stop(self) -> None:
         """Stop playback immediately."""
+        self._stopped = True
         self._playback.stop()
 
     def _request_synthesis(self, text: str) -> bytes:

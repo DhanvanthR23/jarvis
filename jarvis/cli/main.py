@@ -245,7 +245,9 @@ def main():
                     if interrupted:
                         runtime.interrupt()
                         console.print("[bold yellow]🛑 Interrupted![/bold yellow]")
-                        speak_thread.join()
+                        # We do NOT join speak_thread here, so the UI can return instantly
+                        # to listening. The thread will abort cleanly in the background
+                        # due to the _stopped flag.
                         
                 else:
                     console.print("\n[dim](No speech detected)[/dim]")
