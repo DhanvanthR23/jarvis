@@ -1,7 +1,7 @@
 """Tests for Voice -> Controller integration (G24.7)."""
 import unittest
 
-from jarvis.agent.mock import MockAgent, ScriptedScenario
+from tests.mock_agent import MockAgent, ScriptedScenario
 from jarvis.core.controller import JarvisController
 from jarvis.output.filter import SAFE_REPLACEMENT, OutputSecurityFilter
 from jarvis.voice.stt.interface import Transcript
@@ -40,7 +40,7 @@ class TestVoiceControllerIntegration(unittest.TestCase):
 
     def test_voice_cannot_bypass_policy(self):
         # Even if voice transcription returns something, policy blocks tool execution
-        from jarvis.agent.mock import ScriptedScenario, ScriptedStep
+        from tests.mock_agent import ScriptedScenario, ScriptedStep
         from jarvis.core.events import EventType
         from jarvis.policy.engine import PolicyEngine
 

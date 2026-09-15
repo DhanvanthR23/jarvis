@@ -4,7 +4,7 @@ Verifies a read-only command completes the full pipeline without triggering appr
 """
 import unittest
 
-from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
+from tests.mock_agent import MockAgent, ScriptedScenario, ScriptedStep
 from jarvis.core.controller import JarvisController
 from jarvis.output.filter import OutputSecurityFilter
 from jarvis.policy.engine import PolicyEngine

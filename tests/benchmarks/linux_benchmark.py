@@ -119,7 +119,7 @@ def run_benchmark(agent_backend, verbose=True):
 
 if __name__ == '__main__':
     # By default run with MockAgent for CI
-    from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
+    from tests.mock_agent import MockAgent, ScriptedScenario, ScriptedStep
     
     mock_scenarios = [
         ScriptedScenario('wifi', [ScriptedStep('command.execute', {'command': 'nmcli'})], 'done'),

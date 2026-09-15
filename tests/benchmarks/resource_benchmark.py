@@ -47,7 +47,7 @@ def stage_a():
     
     # Import jarvis core to measure its footprint
     t0 = time.monotonic()
-    from jarvis.agent.mock import MockAgent
+    from tests.mock_agent import MockAgent
     from jarvis.core.controller import JarvisController
     from jarvis.tools.registry import register_readonly_tools
     agent = MockAgent([])
@@ -131,7 +131,7 @@ def stage_c(test_wav):
         print(f"  TTS (piper) import failed: {e}")
     
     # Simulate AGY + MCP load (JarvisController with mock agent processing)
-    from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
+    from tests.mock_agent import MockAgent, ScriptedScenario, ScriptedStep
     from jarvis.core.controller import JarvisController
     from jarvis.tools.registry import register_readonly_tools
     

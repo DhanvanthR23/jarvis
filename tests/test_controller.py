@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from jarvis.agent.mock import MockAgent, ScriptedScenario, ScriptedStep
+from tests.mock_agent import MockAgent, ScriptedScenario, ScriptedStep
 from jarvis.core.controller import JarvisController
 from jarvis.core.events import EventType
 

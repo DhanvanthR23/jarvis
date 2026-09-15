@@ -2,46 +2,35 @@
 import argparse
 import sys
 
-from jarvis.agent.mock import MockAgent  # Replace with real agent if needed? 
 from jarvis.audit.logger import AuditLogger
 from jarvis.core.controller import JarvisController
 from jarvis.policy.approval import CLIApprovalHandler
 from jarvis.policy.engine import PolicyEngine
 
 
-def get_controller(backend_name: str = "mock", active_role: str = "system_diagnostics", verbose: bool = False, enable_gui: bool = False) -> JarvisController:
+def get_controller(active_role: str = "system_diagnostics", verbose: bool = False, enable_gui: bool = False) -> JarvisController:
     import os
 
     from jarvis.agent.agy import AGYBackend
-    from jarvis.agent.mock import DEFAULT_SCENARIOS
     
     # Setup agent
-    agent = None
-    if backend_name == "agy":
-        try:
-            os.makedirs("/tmp/jarvis_workspace", exist_ok=True)
-            creds_paths = []
-            if "JARVIS_AGY_CREDS" in os.environ:
-                if not os.environ["JARVIS_AGY_CREDS"].strip():
-                    raise ValueError("JARVIS_AGY_CREDS is empty")
-                for pair in os.environ["JARVIS_AGY_CREDS"].split(","):
-                    if ":" not in pair:
-                        raise ValueError(f"Malformed credential pair (missing colon): {pair}")
-                    host, guest = pair.split(":", 1)
-                    if not os.path.isabs(host):
-                        raise ValueError(f"Host path must be absolute: {host}")
-                    if not os.path.exists(host):
-                        raise ValueError(f"Host credential path does not exist: {host}")
-                    if not guest.startswith("/home/agent/.gemini/"):
-                        raise ValueError(f"Guest path must be within /home/agent/.gemini/: {guest}")
-                    creds_paths.append((host, guest))
-            agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace", creds_paths=creds_paths, enable_gui=enable_gui)
-        except Exception as e:
-            print(f"Warning: AGYBackend failed to initialize: {e}. Falling back to MockAgent.", file=sys.stderr)
-            backend_name = "mock"
-            
-    if backend_name == "mock" or agent is None:
-        agent = MockAgent(DEFAULT_SCENARIOS)
+    os.makedirs("/tmp/jarvis_workspace", exist_ok=True)
+    creds_paths = []
+    if "JARVIS_AGY_CREDS" in os.environ:
+        if not os.environ["JARVIS_AGY_CREDS"].strip():
+            raise ValueError("JARVIS_AGY_CREDS is empty")
+        for pair in os.environ["JARVIS_AGY_CREDS"].split(","):
+            if ":" not in pair:
+                raise ValueError(f"Malformed credential pair (missing colon): {pair}")
+            host, guest = pair.split(":", 1)
+            if not os.path.isabs(host):
+                raise ValueError(f"Host path must be absolute: {host}")
+            if not os.path.exists(host):
+                raise ValueError(f"Host credential path does not exist: {host}")
+            if not guest.startswith("/home/agent/.gemini/"):
+                raise ValueError(f"Guest path must be within /home/agent/.gemini/: {guest}")
+            creds_paths.append((host, guest))
+    agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace", creds_paths=creds_paths, enable_gui=enable_gui)
 
     # Setup Policy
     policy_engine = None
@@ -126,7 +115,6 @@ def main():
     parser.add_argument("--voice", action="store_true", help="Launch Voice Runtime")
     parser.add_argument("--stt-engine", choices=["whisper"], default="whisper", help="STT engine to use (defaults to whisper)")
     parser.add_argument("--tts-engine", choices=["piper", "cloud"], default="piper", help="TTS engine to use (defaults to piper)")
-    parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
     parser.add_argument("--enable-gui", action="store_true", help="Launch the agent with an isolated GUI compositor (cage)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed logs about tool arguments, policy reasons, and outputs")
     args = parser.parse_args()
@@ -146,17 +134,8 @@ def main():
         else:
             args.voice = False
 
-    # Determine backend
-    backend = args.backend
-    if not backend:
-        # Defaulting safely, but supporting live sandboxed AGY when running interactively or via voice
-        if args.query:
-            backend = "mock"
-        else:
-            backend = "agy"
-
     try:
-        controller = get_controller(backend_name=backend, active_role="system_diagnostics", verbose=args.verbose, enable_gui=args.enable_gui)
+        controller = get_controller(active_role="system_diagnostics", verbose=args.verbose, enable_gui=args.enable_gui)
     except Exception as e:
         print(f"Failed to initialize controller: {e}", file=sys.stderr)
         sys.exit(1)
