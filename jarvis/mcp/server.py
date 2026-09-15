@@ -92,7 +92,10 @@ class MCPServer:
                     self.audit_logger.log_event("session_0", "agent", tool_name, args, policy_decision, approval_decision, str(result)[:100])
                 
                 # Format output properly for MCP
-                content = [{"type": "text", "text": str(result)}]
+                if isinstance(result, dict) and "data" in result and isinstance(result["data"], list):
+                    content = result["data"]
+                else:
+                    content = [{"type": "text", "text": str(result)}]
                 return {"result": {"content": content}}
             except Exception as e:
                 return {"error": {"code": -32603, "message": str(e)}}
