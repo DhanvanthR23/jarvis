@@ -296,18 +296,31 @@ def main():
             sys.exit(1)
     else:
         # REPL mode
+        import readline
+        import os
+        import atexit
+        
+        histfile = os.path.join(os.path.expanduser("~"), ".jarvis_history")
+        try:
+            readline.read_history_file(histfile)
+            readline.set_history_length(1000)
+        except FileNotFoundError:
+            pass
+        atexit.register(readline.write_history_file, histfile)
+
         try:
             from rich.console import Console
             from rich.markdown import Markdown
             from rich.panel import Panel
+
             console = Console()
             ascii_art = r"""
-     __       ____   ____  __    __  __  _____ 
-    |  |     /    \ |    \|  |  |  ||  |/ ____|
-    |  |    |  /\  ||  _  /|  |  |  ||  |   (   
- __ |  |    |  __  ||  |  \|  |__|  ||  |\___ \ 
-|  \|  |    | |  | ||  |\  \\      / |  |____) |
- \____/     |_|  |_||__| \__\\____/  |__||_____/ 
+     __   ____   ____  __    __  __  _____ 
+    |  | /    \ |    \|  |  |  ||  |/ ____|
+    |  ||  /\  ||  _  /|  |  |  ||  |   (   
+ __ |  ||  __  ||  |  \|  |__|  ||  |\___ \ 
+|  \|  || |  | ||  |\  \\      / |  |____) |
+ \____/ |_|  |_||__| \__\\____/  |__||_____/ 
             """
             console.print(Panel.fit(
                 f"[bold cyan]{ascii_art}[/bold cyan]\n[green]Security-First AI Assistant[/green] • [bold]REPL Active[/bold]",
