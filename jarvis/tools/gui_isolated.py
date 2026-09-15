@@ -109,7 +109,7 @@ def desktop_launch(app_command: str, args: list[str] = None) -> str:
         args = []
     
     # We allowlist a few common GUI apps for testing
-    allowlist = ['zenity', 'firefox', 'foot', 'gnome-calculator', 'gedit', 'xterm']
+    allowlist = ['zenity', 'firefox', 'foot', 'gnome-calculator', 'gedit']
     if app_command not in allowlist:
         return f"Error: App '{app_command}' is not in the GUI allowlist: {allowlist}"
         
