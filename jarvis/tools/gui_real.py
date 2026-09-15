@@ -72,8 +72,35 @@ def desktop_observe() -> str:
 desktop_observe.required_capabilities = ["CAP_WAYLAND_OBSERVE"]
 
 def desktop_focus(window_id: str) -> str:
-    """Mock focuses on a specific window on the real desktop."""
-    return f"Focused on real window {window_id}"
+    """Focuses a window on the real desktop by its ID.
+
+    Tries niri msg first (Niri compositor), then falls back to wlrctl (wlroots).
+    Requires a Wayland proxy to be active.
+    """
+    _verify_wayland_proxy()
+
+    # Try niri msg first (native for the user's compositor)
+    try:
+        res = subprocess.run(
+            ["niri", "msg", "action", "focus-window", "--id", str(window_id)],
+            capture_output=True, text=True, timeout=5
+        )
+        if res.returncode == 0:
+            return f"Focused real window ID {window_id}"
+    except FileNotFoundError:
+        pass
+
+    # Fallback: wlrctl (wlroots-based compositors)
+    try:
+        res = subprocess.run(
+            ["wlrctl", "toplevel", "focus", window_id],
+            capture_output=True, text=True, timeout=5
+        )
+        if res.returncode == 0:
+            return f"Focused real window '{window_id}'"
+        return f"Failed to focus window {window_id}: {res.stderr.strip()}"
+    except FileNotFoundError:
+        return "Error: No supported window manager detected (need niri or wlrctl)"
 
 desktop_focus.required_capabilities = ["CAP_WAYLAND_CONTROL"]
 

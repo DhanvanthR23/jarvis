@@ -15,10 +15,72 @@ def desktop_screenshot() -> str:
     return path
 
 def desktop_windows() -> list[str]:
-    raise NotImplementedError("To be implemented in G21.2")
+    """Lists all open windows in the desktop environment.
+
+    Tries wlrctl (wlroots compositors) first, then falls back to niri msg (Niri compositor).
+    Returns a list of human-readable window descriptions.
+    """
+    # Try wlrctl first (wlroots-based compositors)
+    try:
+        res = subprocess.run(
+            ["wlrctl", "toplevel", "list"],
+            capture_output=True, text=True, timeout=5
+        )
+        if res.returncode == 0 and res.stdout.strip():
+            return [line.strip() for line in res.stdout.strip().splitlines() if line.strip()]
+    except FileNotFoundError:
+        pass
+
+    # Fallback: niri msg (Niri compositor)
+    try:
+        import json as _json
+        res = subprocess.run(
+            ["niri", "msg", "-j", "windows"],
+            capture_output=True, text=True, timeout=5
+        )
+        if res.returncode == 0:
+            windows = _json.loads(res.stdout)
+            result = []
+            for w in windows:
+                focused = " (focused)" if w.get("is_focused") else ""
+                result.append(
+                    f"ID {w['id']}: \"{w.get('title', '')}\" "
+                    f"[{w.get('app_id', 'unknown')}] "
+                    f"workspace={w.get('workspace_id', '?')}{focused}"
+                )
+            return result
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    return ["Error: No supported window manager detected (need wlrctl or niri)"]
 
 def desktop_focus(window_id: str) -> str:
-    raise NotImplementedError("To be implemented in G21.2")
+    """Focuses a window by its ID.
+
+    Tries wlrctl (wlroots compositors) first, then falls back to niri msg (Niri compositor).
+    """
+    # Try wlrctl first
+    try:
+        res = subprocess.run(
+            ["wlrctl", "toplevel", "focus", window_id],
+            capture_output=True, text=True, timeout=5
+        )
+        if res.returncode == 0:
+            return f"Focused window '{window_id}'"
+    except FileNotFoundError:
+        pass
+
+    # Fallback: niri msg (expects numeric ID)
+    try:
+        res = subprocess.run(
+            ["niri", "msg", "action", "focus-window", "--id", str(window_id)],
+            capture_output=True, text=True, timeout=5
+        )
+        if res.returncode == 0:
+            return f"Focused window ID {window_id}"
+        return f"Failed to focus window {window_id}: {res.stderr.strip()}"
+    except FileNotFoundError:
+        return "Error: No supported window manager detected (need wlrctl or niri)"
 
 def desktop_click(x: int, y: int) -> str:
     """Clicks on the sandboxed desktop using wlrctl."""
