@@ -82,7 +82,8 @@ def test_desktop_click(mock_run):
     with patch.dict(os.environ, {"WAYLAND_DISPLAY": "wayland-proxy-1"}):
         res = desktop_click(10, 20)
         assert "Clicked real desktop at (10, 20)" in res
-        assert mock_run.call_count == 2
+        assert mock_run.call_count == 3
+        mock_run.assert_any_call(["wlrctl", "pointer", "move", "-10000", "-10000"], check=True, capture_output=True)
         mock_run.assert_any_call(["wlrctl", "pointer", "move", "10", "20"], check=True, capture_output=True)
         mock_run.assert_any_call(["wlrctl", "pointer", "click", "left"], check=True, capture_output=True)
 

@@ -2,17 +2,26 @@ import subprocess
 import tempfile
 import os
 
-def desktop_screenshot() -> str:
+import base64
+
+def desktop_screenshot() -> list:
     """Captures a screenshot of the sandboxed GUI using grim."""
     fd, path = tempfile.mkstemp(suffix=".png")
     os.close(fd)
     
     try:
         subprocess.run(["grim", path], check=True, capture_output=True)
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("utf-8")
+        return [
+            {"type": "text", "text": "Isolated desktop screenshot taken."},
+            {"type": "image", "data": b64, "mimeType": "image/png"}
+        ]
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to capture screenshot: {e.stderr.decode('utf-8')}")
-        
-    return path
+    finally:
+        if os.path.exists(path):
+            os.remove(path)
 
 def desktop_windows() -> list[str]:
     """Lists all open windows in the desktop environment.
@@ -85,6 +94,9 @@ def desktop_focus(window_id: str) -> str:
 def desktop_click(x: int, y: int) -> str:
     """Clicks on the sandboxed desktop using wlrctl."""
     try:
+        # Hack for absolute positioning: wlrctl pointer move is relative.
+        # We move to a massive negative offset to clamp at (0,0), then move to (x, y).
+        subprocess.run(["wlrctl", "pointer", "move", "-10000", "-10000"], check=True, capture_output=True)
         subprocess.run(["wlrctl", "pointer", "move", str(x), str(y)], check=True, capture_output=True)
         subprocess.run(["wlrctl", "pointer", "click", "left"], check=True, capture_output=True)
         return f"Clicked isolated desktop at ({x}, {y})"

@@ -29,7 +29,7 @@ def _verify_wayland_proxy():
     if display == "wayland-0":
         raise WaylandProxyError("Raw WAYLAND_DISPLAY (wayland-0) is not allowed. A filtering proxy is required (whitelist: screencopy, virtual-keyboard, virtual-pointer).")
 
-def desktop_observe() -> str:
+def desktop_observe() -> list:
     """Takes an observation of the real desktop using grim via a Wayland proxy."""
     global _LAST_SCREENSHOT_TIME
     
@@ -59,10 +59,14 @@ def desktop_observe() -> str:
             except Exception:
                 pass
                 
-        # Encode or return path (typically tools return path or base64)
+        # Return MCP-compatible content block
         with open(tmp_path, "rb") as img:
             b64 = base64.b64encode(img.read()).decode("utf-8")
-        return f"Screenshot taken. Base64: {b64[:20]}..."
+        
+        return [
+            {"type": "text", "text": "Real desktop screenshot taken."},
+            {"type": "image", "data": b64, "mimeType": "image/jpeg" if HAS_PIL else "image/png"}
+        ]
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"grim failed: {e.stderr.decode('utf-8', errors='ignore')}")
     finally:
@@ -108,6 +112,9 @@ def desktop_click(x: int, y: int) -> str:
     """Clicks on the real desktop using wlrctl."""
     _verify_wayland_proxy()
     try:
+        # Hack for absolute positioning: wlrctl pointer move is relative.
+        # We move to a massive negative offset to clamp at (0,0), then move to (x, y).
+        subprocess.run(["wlrctl", "pointer", "move", "-10000", "-10000"], check=True, capture_output=True)
         subprocess.run(["wlrctl", "pointer", "move", str(x), str(y)], check=True, capture_output=True)
         subprocess.run(["wlrctl", "pointer", "click", "left"], check=True, capture_output=True)
         return f"Clicked real desktop at ({x}, {y})"

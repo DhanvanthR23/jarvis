@@ -83,7 +83,8 @@ def test_desktop_keypress_isolated(mock_run):
 @patch("subprocess.run")
 def test_desktop_click_isolated(mock_run):
     res = desktop_click(100, 200)
-    assert mock_run.call_count == 2
+    assert mock_run.call_count == 3
+    mock_run.assert_any_call(["wlrctl", "pointer", "move", "-10000", "-10000"], check=True, capture_output=True)
     mock_run.assert_any_call(["wlrctl", "pointer", "move", "100", "200"], check=True, capture_output=True)
     mock_run.assert_any_call(["wlrctl", "pointer", "click", "left"], check=True, capture_output=True)
     assert res == "Clicked isolated desktop at (100, 200)"

@@ -82,7 +82,7 @@ def test_isolated_gui_click_type_keypress():
         assert isolated_click(10, 20) == "Clicked isolated desktop at (10, 20)"
         assert isolated_type("hello") == "Typed on isolated desktop: hello"
         assert isolated_keypress("enter") == "Pressed key on isolated desktop: enter"
-    assert run.call_count == 4
+    assert run.call_count == 5
 
 
 def test_real_gui_focus_niri():
@@ -106,4 +106,4 @@ def test_real_gui_click_type_keypress():
             assert real_click(30, 40) == "Clicked real desktop at (30, 40)"
             assert real_type("world") == "Typed on real desktop: world"
             assert real_keypress("esc") == "Pressed key on real desktop: esc"
-    assert run.call_count == 4
+    assert run.call_count == 5
