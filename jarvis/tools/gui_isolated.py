@@ -103,6 +103,22 @@ def desktop_click(x: int, y: int) -> str:
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Failed to click: {e.stderr.decode('utf-8', errors='ignore')}")
 
+def desktop_launch(app_command: str, args: list[str] = None) -> str:
+    """Launch a GUI application in the background on the isolated desktop."""
+    if args is None:
+        args = []
+    
+    # We allowlist a few common GUI apps for testing
+    allowlist = ['zenity', 'firefox', 'foot', 'gnome-calculator', 'gedit', 'xterm']
+    if app_command not in allowlist:
+        return f"Error: App '{app_command}' is not in the GUI allowlist: {allowlist}"
+        
+    try:
+        proc = subprocess.Popen([app_command] + args)
+        return f"Launched {app_command} with PID {proc.pid}"
+    except Exception as e:
+        return f"Failed to launch {app_command}: {e}"
+
 def desktop_type(text: str) -> str:
     """Types text on the sandboxed desktop using wtype."""
     try:

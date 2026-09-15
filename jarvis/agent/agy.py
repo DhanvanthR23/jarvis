@@ -37,9 +37,10 @@ sock.close()
 class AGYBackend(AgentBackend):
     """Integrates the AGY CLI within the Jarvis sandbox."""
 
-    def __init__(self, workspace_dir: str, creds_paths: list | None = None):
+    def __init__(self, workspace_dir: str, creds_paths: list | None = None, enable_gui: bool = False):
         self.workspace_dir = workspace_dir
         self.creds_paths = creds_paths or []
+        self.enable_gui = enable_gui
         # Locate AGY binary once on initialization
         self.agy_path = shutil.which('agy')
         if not self.agy_path:
@@ -203,7 +204,9 @@ Good: "That needs your approval — it's outside what I'll do unprompted. Confir
                 writable_paths=[
                     (os.path.join(self.session_dir, 'config'), '/home/agent/.gemini/config'),
                     (os.path.join(self.session_dir, 'antigravity-cli'), '/home/agent/.gemini/antigravity-cli')
-                ]
+                ],
+                enable_gpu=self.enable_gui,
+                compositor='cage' if self.enable_gui else None
             )
             
             self.launcher = SecureLauncher(config)

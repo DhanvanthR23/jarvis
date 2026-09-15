@@ -9,7 +9,7 @@ from jarvis.policy.approval import CLIApprovalHandler
 from jarvis.policy.engine import PolicyEngine
 
 
-def get_controller(backend_name: str = "mock", active_role: str = "system_diagnostics", verbose: bool = False) -> JarvisController:
+def get_controller(backend_name: str = "mock", active_role: str = "system_diagnostics", verbose: bool = False, enable_gui: bool = False) -> JarvisController:
     import os
 
     from jarvis.agent.agy import AGYBackend
@@ -35,7 +35,7 @@ def get_controller(backend_name: str = "mock", active_role: str = "system_diagno
                     if not guest.startswith("/home/agent/.gemini/"):
                         raise ValueError(f"Guest path must be within /home/agent/.gemini/: {guest}")
                     creds_paths.append((host, guest))
-            agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace", creds_paths=creds_paths)
+            agent = AGYBackend(workspace_dir="/tmp/jarvis_workspace", creds_paths=creds_paths, enable_gui=enable_gui)
         except Exception as e:
             print(f"Warning: AGYBackend failed to initialize: {e}. Falling back to MockAgent.", file=sys.stderr)
             backend_name = "mock"
@@ -127,6 +127,7 @@ def main():
     parser.add_argument("--stt-engine", choices=["whisper"], default="whisper", help="STT engine to use (defaults to whisper)")
     parser.add_argument("--tts-engine", choices=["piper", "cloud"], default="piper", help="TTS engine to use (defaults to piper)")
     parser.add_argument("--backend", choices=["mock", "agy"], help="Agent backend to use (defaults to 'mock' for one-shots, 'agy' for interactive REPL)")
+    parser.add_argument("--enable-gui", action="store_true", help="Launch the agent with an isolated GUI compositor (cage)")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed logs about tool arguments, policy reasons, and outputs")
     args = parser.parse_args()
 
@@ -155,7 +156,7 @@ def main():
             backend = "agy"
 
     try:
-        controller = get_controller(backend_name=backend, active_role="system_diagnostics", verbose=args.verbose)
+        controller = get_controller(backend_name=backend, active_role="system_diagnostics", verbose=args.verbose, enable_gui=args.enable_gui)
     except Exception as e:
         print(f"Failed to initialize controller: {e}", file=sys.stderr)
         sys.exit(1)

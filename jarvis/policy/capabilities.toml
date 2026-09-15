@@ -29,6 +29,7 @@ desktop_focus = "approval"
 desktop_click = "approval"
 desktop_type = "approval"
 desktop_keypress = "approval"
+desktop_launch = "safe"
 
 # G22 Real Desktop Tools
 desktop_observe = "approval"
@@ -105,6 +106,7 @@ approval_required = true
 [roles.gui_automation]
 description = "Sandboxed desktop interaction and real wayland observation"
 allowed_capabilities = [
+    "desktop_launch",
     "desktop_screenshot",
     "desktop_windows",
     "desktop_focus",

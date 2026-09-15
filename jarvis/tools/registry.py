@@ -31,6 +31,7 @@ def register_readonly_tools(controller: JarvisController):
 
     # G21 Isolated GUI Tools
     from jarvis.tools import gui_isolated
+    controller.register_tool('desktop_launch', gui_isolated.desktop_launch, 'Launch a GUI application in the isolated desktop')
     controller.register_tool('desktop_screenshot', gui_isolated.desktop_screenshot, 'Take a screenshot of the isolated desktop')
     controller.register_tool('desktop_windows', gui_isolated.desktop_windows, 'List windows in the isolated desktop')
     controller.register_tool('desktop_focus', gui_isolated.desktop_focus, 'Focus a window in the isolated desktop')
