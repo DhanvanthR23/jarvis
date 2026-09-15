@@ -14,7 +14,7 @@ files_search = "safe"
 files_write = "approval"
 service_restart = "approval"
 package_install = "approval"
-memory_write = "approval"
+memory_write = "safe"
 memory_read = "safe"
 memory_search = "safe"
 

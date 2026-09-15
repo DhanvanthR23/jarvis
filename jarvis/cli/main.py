@@ -114,7 +114,7 @@ def get_controller(backend_name: str = "mock", active_role: str = "system_diagno
         results = memory_store.search(query=query)
         return {"status": "success", "results": [{"key": r.key, "value": r.value} for r in results]}
 
-    controller.register_tool('memory_write', memory_write, 'Write a fact to persistent memory')
+    controller.register_tool('memory_write', memory_write, 'Write a fact to persistent memory. Valid categories: system_profile, preferences, facts, task_history, notes.')
     controller.register_tool('memory_read', memory_read, 'Read a fact from persistent memory by key')
     controller.register_tool('memory_search', memory_search, 'Search persistent memory')
 
@@ -330,8 +330,8 @@ def main():
 
             console = Console()
             ascii_art = r"""
-     __   ____   ____  __    __  __  _____ 
-    |  | /    \ |    \|  |  |  ||  |/ ____|
+     __   ____   _____  __    __  __  _____ 
+    |  | /    \ |  _  \|  |  |  ||  |/ ____|
     |  ||  /\  ||  _  /|  |  |  ||  |   (   
  __ |  ||  __  ||  |  \|  |__|  ||  |\___ \ 
 |  \|  || |  | ||  |\  \\      / |  |____) |
