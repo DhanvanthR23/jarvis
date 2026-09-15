@@ -159,6 +159,8 @@ class JarvisController:
                             timeout_val = role.max_execution_time
                     if is_voice:
                         timeout_val = min(timeout_val, 180) if timeout_val > 90 else 90
+                    else:
+                        timeout_val = max(timeout_val, 180)
                         
                     response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a), timeout=timeout_val)
                     return self.output_filter.filter(response)
@@ -193,6 +195,10 @@ class JarvisController:
             # Voice mode needs to answer quickly, but browser/GUI/sandbox may take longer.
             # Floor at 90s, cap at 180s.
             timeout_val = min(timeout_val, 180) if timeout_val > 90 else 90
+        else:
+            # REPL mode blocks synchronously on human approval input (CLIApprovalHandler).
+            # Floor at 180s so the sandbox doesn't timeout while waiting for the user to type 'once'.
+            timeout_val = max(timeout_val, 180)
 
         if self.verbose:
             print(f"[VERBOSE] Launching AGY with timeout {timeout_val}s")
