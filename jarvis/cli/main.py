@@ -130,6 +130,21 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="Print detailed logs about tool arguments, policy reasons, and outputs")
     args = parser.parse_args()
 
+    if len(sys.argv) == 1:
+        from rich.prompt import Prompt
+        from rich.console import Console
+        from rich.panel import Panel
+        console = Console()
+        console.print(Panel.fit("[bold cyan]Welcome to Jarvis[/bold cyan]\nPlease select an interface mode.", border_style="cyan"))
+        
+        interface = Prompt.ask("Interface", choices=["repl", "voice"], default="repl")
+        if interface == "voice":
+            args.voice = True
+            args.stt_engine = Prompt.ask("STT Engine", choices=["whisper"], default="whisper")
+            args.tts_engine = Prompt.ask("TTS Engine", choices=["piper", "cloud"], default="piper")
+        else:
+            args.voice = False
+
     # Determine backend
     backend = args.backend
     if not backend:
