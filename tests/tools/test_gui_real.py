@@ -36,7 +36,8 @@ def test_desktop_observe_success(mock_run):
         with patch("builtins.open", MagicMock()) as mock_open:
             mock_open.return_value.__enter__.return_value.read.return_value = b"fakeimage"
             res = desktop_observe()
-            assert "Screenshot taken" in res
+            assert isinstance(res, list)
+            assert res[0]["text"] == "Real desktop screenshot taken."
 
 @patch("subprocess.run")
 @pytest.mark.skipif(
@@ -57,7 +58,8 @@ def test_desktop_observe_with_pil(mock_run):
                 with patch("builtins.open", MagicMock()) as mock_open:
                     mock_open.return_value.__enter__.return_value.read.return_value = b"fakeimage"
                     res = desktop_observe()
-                    assert "Screenshot taken" in res
+                    assert isinstance(res, list)
+                    assert res[0]["text"] == "Real desktop screenshot taken."
                     mock_img.thumbnail.assert_called_once()
                     mock_img.convert.assert_called_once_with("RGB")
                     mock_converted_img.save.assert_called_once()

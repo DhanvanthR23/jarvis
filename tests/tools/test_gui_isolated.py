@@ -43,17 +43,19 @@ sys.path.insert(0, "/home/dhanvanth/projects/jarvis")
 from jarvis.tools.gui_isolated import desktop_screenshot
 
 try:
-    path = desktop_screenshot()
-    if not os.path.exists(path):
-        print("FAIL: Path does not exist")
+    res = desktop_screenshot()
+    if not isinstance(res, list):
+        print(f"FAIL: Expected list, got {type(res)}")
         sys.exit(1)
-    if os.path.getsize(path) == 0:
-        print("FAIL: File is empty")
+    if res[1]["type"] != "image":
+        print("FAIL: No image block found")
+        sys.exit(1)
+    if len(res[1]["data"]) < 100:
+        print("FAIL: Base64 data seems too small or empty")
         sys.exit(1)
     print("SUCCESS")
-    os.remove(path)
 except Exception as e:
-    print(f"FAIL: {e}")
+    print(f"FAIL: Exception {e}")
     sys.exit(1)
 '''
         script_path = os.path.join(workspace_dir, "test_screenshot.py")

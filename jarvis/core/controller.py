@@ -156,7 +156,10 @@ class JarvisController:
                     if self.policy_engine and self.policy_engine.active_role:
                         role = self.policy_engine.manifest.roles.get(self.policy_engine.active_role)
                         if role and getattr(role, 'max_execution_time', None):
-                            timeout_val = role.max_execution_time
+                            try:
+                                timeout_val = int(role.max_execution_time)
+                            except (TypeError, ValueError):
+                                pass
                     if is_voice:
                         timeout_val = min(timeout_val, 180) if timeout_val > 90 else 90
                     else:
@@ -189,7 +192,10 @@ class JarvisController:
         if self.policy_engine and self.policy_engine.active_role:
             role = self.policy_engine.manifest.roles.get(self.policy_engine.active_role)
             if role and getattr(role, 'max_execution_time', None):
-                timeout_val = role.max_execution_time
+                try:
+                    timeout_val = int(role.max_execution_time)
+                except (TypeError, ValueError):
+                    pass
                 
         if is_voice:
             # Voice mode needs to answer quickly, but browser/GUI/sandbox may take longer.

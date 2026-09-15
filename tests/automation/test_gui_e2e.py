@@ -49,8 +49,8 @@ try:
     time.sleep(1.0)
     
     # 1. Take screenshot
-    path = desktop_screenshot()
-    if not os.path.exists(path) or os.path.getsize(path) == 0:
+    res = desktop_screenshot()
+    if not isinstance(res, list) or res[1]["type"] != "image" or len(res[1]["data"]) < 100:
         print("FAIL: Screenshot invalid")
         sys.exit(1)
         
