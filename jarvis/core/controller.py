@@ -158,7 +158,7 @@ class JarvisController:
                         if role and getattr(role, 'max_execution_time', None):
                             timeout_val = role.max_execution_time
                     if is_voice:
-                        timeout_val = min(timeout_val, 120) if timeout_val > 45 else 45
+                        timeout_val = min(timeout_val, 180) if timeout_val > 90 else 90
                         
                     response = self.agent_backend.process("Approval confirmed. Proceed with the tool execution.", lambda t, a: self._execute_tool(t, a), timeout=timeout_val)
                     return self.output_filter.filter(response)
@@ -190,9 +190,9 @@ class JarvisController:
                 timeout_val = role.max_execution_time
                 
         if is_voice:
-            # Voice mode needs to answer quickly, but browser/GUI might take longer.
-            # We cap it at 120s if the role allows long execution.
-            timeout_val = min(timeout_val, 120) if timeout_val > 45 else 45
+            # Voice mode needs to answer quickly, but browser/GUI/sandbox may take longer.
+            # Floor at 90s, cap at 180s.
+            timeout_val = min(timeout_val, 180) if timeout_val > 90 else 90
 
         if self.verbose:
             print(f"[VERBOSE] Launching AGY with timeout {timeout_val}s")

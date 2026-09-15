@@ -33,6 +33,7 @@ class CloudTTS(TextToSpeech):
         self._socket_path = socket_path
         self._available = True  # Availability depends on daemon being up
         self._stopped = False
+        self._active_sock: socket.socket | None = None
 
     def is_available(self) -> bool:
         """Check if the proxy daemon socket exists and is connectable."""
@@ -72,15 +73,25 @@ class CloudTTS(TextToSpeech):
             if self._stopped:
                 return
             self._playback.play(wav_data)
+        except (TimeoutError, OSError) as exc:
+            if self._stopped:
+                return  # Interrupted — suppress socket errors silently
+            logger.error("CloudTTS.speak failed: %s", exc)
+            raise
         except Exception as exc:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error("CloudTTS.speak failed: %s", exc)
             raise
 
     def stop(self) -> None:
-        """Stop playback immediately."""
+        """Stop playback immediately and abort any in-flight synthesis."""
         self._stopped = True
+        # Shut down the active socket to unblock _recv_exact immediately
+        sock = self._active_sock
+        if sock is not None:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
         self._playback.stop()
 
     def _request_synthesis(self, text: str) -> bytes:
@@ -95,6 +106,7 @@ class CloudTTS(TextToSpeech):
 
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(10.0)  # generous overall timeout; daemon enforces 1s internally
+        self._active_sock = sock
         try:
             sock.connect(self._socket_path)
             sock.sendall(header + request)
@@ -124,6 +136,7 @@ class CloudTTS(TextToSpeech):
 
             return payload
         finally:
+            self._active_sock = None
             sock.close()
 
     @staticmethod
